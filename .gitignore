@@ -1,0 +1,38 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+show/
+
+# Streamlit local config
+.streamlit/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Python packaging
+pip-selfcheck.json
+.python-version
+
+# Logs and reports
+*.log
+coverage.xml
+htmlcov/
+.pytest_cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Data artifacts and intermediate outputs
+data/processed/
+data/staging/
+
+# IDE/editor settings
+.vscode/
+.idea/
