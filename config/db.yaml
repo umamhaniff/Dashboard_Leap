@@ -1,0 +1,13 @@
+database:
+  host: localhost
+  port: 5432
+  name: dashboard_leap_db
+  user: admin
+  password: password123
+
+api:
+  base_url: https://api.example.com
+  key: your_api_key_here
+
+model:
+  path: models/saved_model.pkl
