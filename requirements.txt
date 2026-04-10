@@ -1,0 +1,16 @@
+pandas
+numpy
+scikit-learn
+requests
+wordcloud
+matplotlib
+seaborn
+plotly
+streamlit
+pydantic
+
+langchain-google-genai
+
+# FIX DEPENDENCY (penting)
+google-generativeai==0.8.6
+google-ai-generativelanguage==0.6.15
