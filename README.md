@@ -1,117 +1,246 @@
-# Dashboard Leap - Data Analytics Platform
+# 🛡️ LEAP Security Dashboard
 
 ## Overview
 
-Dashboard Leap is a comprehensive data analytics platform that provides end-to-end data processing, machine learning, and interactive visualization capabilities. The platform integrates traditional data science workflows with modern AI-powered insights.
+LEAP Security Dashboard adalah sistem analisis keamanan data interaktif untuk LKP LEAP yang mengintegrasikan Google Sheets sebagai sumber data utama dengan AI-powered insights menggunakan Google Gemini. Dashboard ini dirancang khusus untuk memantau keamanan data siswa, analisis absensi, dan deteksi anomali menggunakan kecerdasan buatan.
 
-## Features
+## ✨ Features
 
-### Data Processing Pipeline
+### 🔒 Security Analysis
 
-- **Data Loading**: Support for CSV, Excel, API, and database sources
-- **Data Cleaning**: Automated handling of missing values, duplicates, and outliers
-- **Data Transformation**: Feature engineering, scaling, and encoding
-- **Data Validation**: Comprehensive data quality checks
+- **AI-Powered Analysis**: Analisis keamanan menggunakan Google Gemini AI
+- **Anomaly Detection**: Deteksi pola mencurigakan dalam data absensi dan performa
+- **Automated Recommendations**: Saran keamanan berbasis AI
 
-### Machine Learning
+### 📊 Data Pipeline
 
-- **Model Training**: Support for classification and regression tasks
-- **Model Evaluation**: Automated performance metrics and validation
-- **Model Deployment**: Easy model saving and loading for predictions
-- **Feature Selection**: Automated feature importance analysis
+- **Google Sheets Integration**: Langsung terhubung ke spreadsheet LKP LEAP
+- **Automated Data Cleaning**: Penanganan missing values, error patterns, dan outliers
+- **Real-time Data Loading**: Cache dengan TTL untuk performa optimal
 
-### Visualization
+### 📈 Interactive Visualizations
 
-- **Static Plots**: High-quality matplotlib and seaborn visualizations
-- **Interactive Dashboards**: Plotly-based interactive visualizations
-- **Automated Reporting**: Generate comprehensive visual reports
+- **Attendance Analytics**: Analisis kehadiran siswa dengan grafik interaktif
+- **Security Metrics**: Metrik keamanan real-time
+- **Data Quality Reports**: Laporan kualitas data otomatis
 
-### AI Integration
+### 🎯 Specialized for LKP LEAP
 
-- **LLM Analysis**: Google Gemini-powered data insights
-- **Automated Insights**: AI-generated analysis and recommendations
-- **Natural Language Queries**: Ask questions about your data in plain English
+- **Student Data Monitoring**: Pemantauan data master siswa
+- **Attendance Tracking**: Sistem tracking absensi canggih
+- **Score Analysis**: Analisis performa akademik dengan deteksi anomali
 
-## Project Structure
+## 🏗️ Project Structure
 
 ```
 dashboard_leap/
-├── app.py                 # Streamlit dashboard entry point
+├── app.py                    # 🎯 Entry point Streamlit dashboard
 ├── config/
-│   └── settings.py        # Configuration for Google Sheets, GCP, app settings
+│   └── settings.py           # ⚙️ Konfigurasi Google Sheets & GCP
 ├── core/
-│   ├── data_pipeline.py   # Data ingestion and cleaning
-│   ├── llm_analyzer.py    # Gemini AI security analysis
-│   └── charts.py          # Plotly visualization helpers
+│   ├── data_pipeline.py      # 🔄 Pipeline data loading & cleaning
+│   ├── llm_analyzer.py       # 🤖 Google Gemini AI security analysis
+│   └── charts.py             # 📊 Plotly visualization helpers
 ├── styles/
-│   └── style.css          # Shared CSS for the dashboard
-└── requirements.txt       # Python dependencies
+│   └── style.css             # 🎨 Custom CSS untuk dashboard
+├── .streamlit/
+│   └── secrets.toml          # 🔐 Streamlit secrets (API keys, credentials)
+├── requirements.txt          # 📦 Python dependencies
+├── README.md                 # 📖 Dokumentasi proyek
+├── flow.md                   # 🔄 Dokumentasi arsitektur & flow
+└── note.md                   # 📝 Catatan setup & penggunaan
 ```
 
-## Installation
+## 🚀 Installation
 
-1. Clone the repository:
+### Prerequisites
+
+- Python 3.8+
+- Google Cloud Project dengan Google Sheets API enabled
+- Service Account credentials untuk Google Sheets access
+
+### Setup Steps
+
+1. **Clone Repository**
 
 ```bash
 git clone <repository-url>
 cd dashboard_leap
 ```
 
-2. Create virtual environment:
+2. **Create Virtual Environment**
 
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# Windows:
+venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
 ```
 
-3. Install dependencies:
+3. **Install Dependencies**
 
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Configure API keys in `config/settings.py` or `.streamlit/secrets.toml`
+4. **Configure Secrets**
+   Edit `.streamlit/secrets.toml`:
 
-## Usage
+```toml
+# Gemini API Key
+GEMINI_API_KEY = "your-api-key-here"
 
-### Running the Dashboard
+# Google Sheets Configuration
+spreadsheet_url = "https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/edit"
 
-```bash
-python app.py
+# GCP Service Account (JSON format)
+[gcp_service_account_json]
+type = "service_account"
+project_id = "your-project-id"
+private_key_id = "..."
+private_key = "..."
+client_email = "..."
+# ... other service account fields
 ```
 
-Atau:
+## 🎮 Usage
+
+### Running the Dashboard
 
 ```bash
 streamlit run app.py
 ```
 
-This will launch the Streamlit dashboard where you can:
+Dashboard akan terbuka di browser dengan 3 halaman utama:
 
-- Upload and explore data
-- Perform automated data cleaning and transformation
-- Train machine learning models
-- Generate interactive visualizations
-- Ask AI-powered questions about your data
+1. **📊 Overview**: Ringkasan data dan metrik utama
+2. **📅 Absensi**: Analisis kehadiran siswa mendalam
+3. **🛡️ Security Analysis**: Analisis keamanan berbasis AI
 
-### Using Individual Modules
+### Data Sources
+
+Dashboard mengambil data dari Google Sheets dengan sheet berikut:
+
+- `DATA_MASTER`: Data master siswa
+- `DATA_ABSENSI`: Data absensi siswa
+- `DATA_NILAI`: Data nilai/performa
+- `DATA_PERTEMUAN`: Data pertemuan kelas
+
+## ⚙️ Configuration
+
+### Settings Configuration (`config/settings.py`)
 
 ```python
-from src.data.loader import load_data
-from src.data.cleaner import clean_data
-from src.models.train import train_model_pipeline
+# Google Sheets Configuration
+SPREADSHEET_URL = "your-spreadsheet-url"
+SERVICE_ACCOUNT_PATH = "path/to/service-account.json"
 
-# Load and clean data
-data = load_data()
-cleaned_data = clean_data(data)
+# Sheet Names
+SHEET_NAMES = ['DATA_MASTER', 'DATA_ABSENSI', 'DATA_NILAI', 'DATA_PERTEMUAN']
 
-# Train a model
-results = train_model_pipeline(cleaned_data, target_col='target_column')
+# AI Configuration
+SECURITY_ANALYSIS_CONFIG = {
+    'system_instruction': "Kamu adalah Security Analyst untuk LKP LEAP...",
+    'max_analysis_length': 2000,
+    'temperature': 0.3
+}
 ```
 
-## Configuration
+### Environment Variables
 
-Edit `config/settings.py` to configure:
+```bash
+# Alternative to secrets.toml
+export GEMINI_API_KEY="your-api-key"
+```
+
+## 🔄 Data Flow
+
+1. **Data Ingestion**: Load data dari Google Sheets menggunakan gspread
+2. **Data Cleaning**: Handle missing values, Google Sheets errors, data type conversion
+3. **Security Analysis**: AI analysis menggunakan Google Gemini untuk deteksi anomali
+4. **Visualization**: Interactive charts menggunakan Plotly
+5. **Reporting**: Automated security recommendations
+
+## 🤖 AI Features
+
+### Security Analysis Capabilities
+
+- Deteksi siswa dengan pola absensi mencurigakan
+- Analisis konsistensi data antar sheet
+- Identifikasi anomali performa akademik
+- Deteksi potensi masalah integritas data
+- Rekomendasi keamanan actionable
+
+### Gemini Integration
+
+- Context-aware analysis dengan system instructions khusus LKP LEAP
+- Multi-sheet data correlation
+- Natural language security insights
+- Automated recommendation generation
+
+## 📊 Data Quality Features
+
+- **Error Pattern Detection**: Otomatis detect dan clean Google Sheets errors (#ERROR!, #REF!, etc.)
+- **Missing Value Handling**: Smart imputation berdasarkan data type
+- **Duplicate Detection**: Identifikasi data duplikat
+- **Type Conversion**: Otomatis convert data types (date, numeric, boolean)
+- **Quality Reporting**: Comprehensive data quality metrics
+
+## 🔧 Development
+
+### Adding New Features
+
+1. Tambah function di `core/` modules
+2. Update `config/settings.py` jika perlu
+3. Test dengan data sample
+4. Update documentation
+
+### Code Style
+
+- Follow PEP 8
+- Use type hints
+- Add docstrings
+- Handle exceptions properly
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Import Error**: Pastikan semua dependencies terinstall
+
+```bash
+pip install -r requirements.txt
+```
+
+**Google Sheets Access**: Verifikasi service account credentials dan permissions
+
+**API Quota**: Check Google Cloud Console untuk Gemini API quota
+
+**Data Loading**: Pastikan spreadsheet URL dan sheet names benar
+
+## 📝 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+Untuk pertanyaan atau issues:
+
+1. Check existing issues di repository
+2. Buat issue baru dengan detail error
+3. Sertakan logs dan konfigurasi (tanpa credentials)
+
+---
+
+**⚡ Quick Start:**
+
+```bash
+git clone <repo>
+cd dashboard_leap
+pip install -r requirements.txt
+streamlit run app.py
+```
 
 - Google Sheets URL/ID
 - Service account path
@@ -145,3 +274,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Support
 
 For questions or issues, please open an issue on the GitHub repository.
+
+```
+
+```

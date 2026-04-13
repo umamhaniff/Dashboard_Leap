@@ -1,219 +1,274 @@
-# Dashboard Leap - Project Structure & Flow
+# 🛡️ LEAP Security Dashboard - Architecture & Data Flow
 
-## Overview
+## 📋 Overview
 
-Dashboard Leap adalah platform analitik data komprehensif yang menyediakan pipeline end-to-end dari data ingestion hingga AI-powered insights.
+LEAP Security Dashboard adalah platform analitik keamanan khusus untuk LKP LEAP yang mengintegrasikan Google Sheets sebagai data source utama dengan AI-powered security analysis menggunakan Google Gemini.
 
-## Project Structure
+## 🏗️ Project Architecture
 
-| Path                 | Type | Description                       | Dependencies          | Output                     |
-| -------------------- | ---- | --------------------------------- | --------------------- | -------------------------- |
-| `app.py`             | File | Streamlit application entrypoint  | `core.*`, `streamlit` | Interactive web dashboard  |
-| `config/settings.py` | File | Konfigurasi Google Sheets dan GCP | -                     | Pengaturan aplikasi        |
-| `styles/style.css`   | File | Custom CSS untuk dashboard        | -                     | Styling dashboard          |
-| `requirements.txt`   | File | Dependencies Python               | -                     | Package requirements       |
-| `README.md`          | File | Dokumentasi proyek                | -                     | Project documentation      |
-| `.gitignore`         | File | Git ignore rules                  | -                     | Version control exclusions |
+### Core Structure
 
-## Core Modules (`src/`)
+| Path                      | Type             | Description                        | Dependencies          | Output                              |
+| ------------------------- | ---------------- | ---------------------------------- | --------------------- | ----------------------------------- |
+| `app.py`                  | 🎯 Main App      | Streamlit dashboard entrypoint     | `core.*`, `streamlit` | Interactive web dashboard           |
+| `config/settings.py`      | ⚙️ Config        | Google Sheets & GCP configuration  | -                     | App settings & secrets              |
+| `core/data_pipeline.py`   | 🔄 Data Pipeline | Data loading, cleaning, processing | `gspread`, `pandas`   | Clean DataFrames                    |
+| `core/llm_analyzer.py`    | 🤖 AI Engine     | Gemini AI security analysis        | `google-generativeai` | Security insights & recommendations |
+| `core/charts.py`          | 📊 Visualization | Plotly interactive charts          | `plotly`              | Interactive visualizations          |
+| `styles/style.css`        | 🎨 Styling       | Custom dashboard CSS               | -                     | UI styling                          |
+| `.streamlit/secrets.toml` | 🔐 Secrets       | API keys & credentials             | -                     | Secure configuration                |
 
-### API Module (`src/api/`)
-
-| File       | Function                            | Input                     | Output         | Dependencies     |
-| ---------- | ----------------------------------- | ------------------------- | -------------- | ---------------- |
-| `fetch.py` | Fetching data dari external sources | API endpoints, DB queries | JSON/dict data | `requests`, `os` |
-
-### Data Processing (`src/data/`)
-
-| File             | Function                               | Input                     | Output                | Key Features                         |
-| ---------------- | -------------------------------------- | ------------------------- | --------------------- | ------------------------------------ |
-| `loader.py`      | Load data dari berbagai sumber         | File paths, API endpoints | pandas.DataFrame      | CSV, Excel, API, Database            |
-| `cleaner.py`     | Data cleaning dan preprocessing        | Raw DataFrame             | Clean DataFrame       | Missing values, duplicates, outliers |
-| `transformer.py` | Feature engineering dan transformation | Clean DataFrame           | Transformed DataFrame | Scaling, encoding, feature creation  |
-
-### Machine Learning (`src/models/`)
-
-| File         | Function                | Input                        | Output                  | Algorithms                       |
-| ------------ | ----------------------- | ---------------------------- | ----------------------- | -------------------------------- |
-| `train.py`   | Model training pipeline | Processed DataFrame + target | Trained model + metrics | RandomForest, LogisticRegression |
-| `predict.py` | Model prediction        | New data + trained model     | Predictions             | Batch/single prediction          |
-
-### Visualization (`src/visualization/`)
-
-| File             | Function                       | Input     | Output         | Libraries           |
-| ---------------- | ------------------------------ | --------- | -------------- | ------------------- |
-| `plot.py`        | Static data visualizations     | DataFrame | PNG/JPG plots  | matplotlib, seaborn |
-| `interactive.py` | Interactive web visualizations | DataFrame | Plotly figures | plotly              |
-
-### AI Integration (`src/llm/`)
-
-| File       | Function                  | Input                       | Output      | AI Features               |
-| ---------- | ------------------------- | --------------------------- | ----------- | ------------------------- |
-| `agent.py` | LLM-powered data analysis | User queries + data context | AI insights | Google Gemini integration |
-
-## Data Flow Pipeline
+## 🔄 Data Flow Pipeline
 
 ```mermaid
 graph TD
-    A[Data Sources] --> B[loader.py]
-    B --> C[cleaner.py]
-    C --> D[transformer.py]
-    D --> E[train.py]
-    D --> F[predict.py]
-    E --> G[Saved Models]
-    G --> F
-    D --> H[plot.py]
-    D --> I[interactive.py]
-    D --> J[agent.py]
-    H --> K[Static Reports]
-    I --> L[Dashboard]
-    J --> M[AI Insights]
+    A[Google Sheets] --> B[authenticate_google_sheets()]
+    B --> C[_open_spreadsheet()]
+    C --> D[get_sheet_data()]
+    D --> E[load_sheet_to_dataframe()]
+    E --> F[_apply_data_types()]
+    F --> G[clean_all_data()]
+    G --> H[get_data_quality_report()]
+    H --> I[analyze_security()]
+    I --> J[create_attendance_chart()]
+    J --> K[Streamlit Dashboard]
+
+    style A fill:#e1f5fe
+    style I fill:#f3e5f5
+    style K fill:#e8f5e8
 ```
 
-## Data Directory Structure
+### Detailed Flow Steps
 
-Data folders are not required for this Streamlit dashboard. All data is loaded from Google Sheets via `config/settings.py` and `.streamlit/secrets.toml`.
+1. **🔐 Authentication**: Connect to Google Sheets API using service account
+2. **📄 Spreadsheet Access**: Open spreadsheet by URL or ID
+3. **📊 Data Extraction**: Fetch all data from configured sheets
+4. **🔄 Data Loading**: Convert to pandas DataFrames with proper structure
+5. **🧹 Data Cleaning**: Apply type conversion, error handling, missing value treatment
+6. **📈 Quality Analysis**: Generate comprehensive data quality reports
+7. **🤖 AI Analysis**: Security analysis using Google Gemini AI
+8. **📊 Visualization**: Create interactive charts and dashboards
+9. **🌐 Web Interface**: Serve via Streamlit with real-time updates
 
-| Directory | Purpose       | Content Type | Access Pattern |
-| --------- | ------------- | ------------ | -------------- |
-| `styles/` | Dashboard CSS | CSS          | UI styling     |
+## 📁 Data Sources & Structure
 
-## Reports & Outputs
+### Google Sheets Integration
 
-| Directory | Purpose    | Generated By | Content Type |
-| --------- | ---------- | ------------ | ------------ |
-| `styles/` | Custom CSS | CSS          | Optional     |
+| Sheet Name       | Purpose             | Key Columns                 | Data Types              |
+| ---------------- | ------------------- | --------------------------- | ----------------------- |
+| `DATA_MASTER`    | Master student data | nama, rombel, kelas         | string, string          |
+| `DATA_ABSENSI`   | Attendance records  | nama, tanggal, hadir        | string, date, boolean   |
+| `DATA_NILAI`     | Academic scores     | nama, mata_pelajaran, nilai | string, string, numeric |
+| `DATA_PERTEMUAN` | Class sessions      | tanggal, materi, pengajar   | date, string, string    |
 
-## Configuration Files
+### Data Processing Stages
 
-| File                      | Purpose                        | Format | Required |
-| ------------------------- | ------------------------------ | ------ | -------- |
-| `config/settings.py`      | App and data source config     | Python | Yes      |
-| `.streamlit/secrets.toml` | Secret overrides for Streamlit | TOML   | Optional |
-| `pyrightconfig.json`      | Python type checking           | JSON   | Optional |
+#### Stage 1: Raw Data Loading
 
-## Environment & Dependencies
-
-| Component          | Purpose                    | Location   | Management      |
-| ------------------ | -------------------------- | ---------- | --------------- |
-| `venv/`            | Python virtual environment | Root level | Manual creation |
-| `requirements.txt` | Python packages            | Root level | pip install     |
-| `.gitignore`       | Version control exclusions | Root level | Git             |
-
-## Execution Flow
-
-### 1. Setup Phase
-
-```
-requirements.txt → pip install → Virtual environment ready
-config/settings.py / .streamlit/secrets.toml → API keys configured → External connections ready
+```python
+# From core/data_pipeline.py
+def load_all_data() -> Dict[str, pd.DataFrame]:
+    # Authenticate with Google Sheets
+    # Open spreadsheet
+    # Extract all sheets
+    # Return raw DataFrames
 ```
 
-### 2. Data Processing Phase
+#### Stage 2: Data Cleaning Pipeline
 
-```
-Raw Data → loader.py → cleaner.py → transformer.py → Processed Data
-```
-
-### 3. Model Development Phase
-
-```
-Processed Data → train.py → Model training → Model evaluation → Saved model
-```
-
-### 4. Inference Phase
-
-```
-New Data → predict.py → Model predictions → Results
+```python
+# From core/data_pipeline.py
+def clean_all_data(dataframes: Dict[str, pd.DataFrame]):
+    # Apply Google Sheets error cleaning
+    # Apply sheet-specific cleaning (attendance, master, scores)
+    # Handle missing values
+    # Remove empty rows
+    # Return cleaned DataFrames
 ```
 
-### 5. Visualization Phase
+#### Stage 3: AI Security Analysis
 
-```
-Processed Data → plot.py/interactive.py → Static/Interactive visualizations
-```
-
-### 6. AI Analysis Phase
-
-```
-Data + User Query → agent.py → LLM analysis → Insights
-```
-
-### 7. Dashboard Phase
-
-```
-All components → app.py → Streamlit dashboard → User interaction
+```python
+# From core/llm_analyzer.py
+def analyze_security(dataframes: Dict[str, pd.DataFrame]):
+    # Prepare data summary for AI
+    # Call Google Gemini API
+    # Generate security insights
+    # Return analysis report
 ```
 
-## Key Integration Points
+## 🔧 Configuration Management
 
-| Component               | Integrates With                   | Purpose                   |
-| ----------------------- | --------------------------------- | ------------------------- |
-| `app.py`                | `core/`, `config/`                | Streamlit dashboard entry |
-| `core/data_pipeline.py` | `core/llm_analyzer.py`            | Load and clean Sheet data |
-| `core/llm_analyzer.py`  | `app.py`                          | AI security analysis      |
-| `core/charts.py`        | `app.py`                          | Visualization helpers     |
-| `config/settings.py`    | `app.py`, `core/data_pipeline.py` | Sheet/GCP configuration   |
+### Settings Hierarchy
 
-## Error Handling & Logging
+```
+.streamlit/secrets.toml (highest priority)
+         ↓
+config/settings.py (defaults)
+         ↓
+Hardcoded defaults (fallback)
+```
 
-| Component        | Error Types                   | Handling Method                  |
-| ---------------- | ----------------------------- | -------------------------------- |
-| `loader.py`      | File not found, format errors | Try/except with fallbacks        |
-| `cleaner.py`     | Data quality issues           | Configurable cleaning strategies |
-| `transformer.py` | Transformation failures       | Graceful degradation             |
-| `train.py`       | Model convergence issues      | Alternative algorithms           |
-| `predict.py`     | Model loading errors          | Fallback predictions             |
-| `agent.py`       | API failures                  | Offline mode fallbacks           |
+### Key Configuration Files
 
-## Performance Considerations
+#### `.streamlit/secrets.toml`
 
-| Component        | Optimization                     | Monitoring               |
-| ---------------- | -------------------------------- | ------------------------ |
-| `loader.py`      | Chunked reading for large files  | Memory usage tracking    |
-| `transformer.py` | Vectorized operations            | Processing time logs     |
-| `train.py`       | Cross-validation, early stopping | Training metrics         |
-| `predict.py`     | Batch processing                 | Prediction latency       |
-| `plot.py`        | Efficient rendering              | Plot generation time     |
-| `interactive.py` | Lazy loading                     | Dashboard responsiveness |
+```toml
+# AI Configuration
+GEMINI_API_KEY = "AIzaSy..."
 
-## Security Considerations
+# Data Source Configuration
+spreadsheet_url = "https://docs.google.com/spreadsheets/d/.../edit"
+sheet_names = ["DATA_MASTER", "DATA_ABSENSI", "DATA_NILAI"]
 
-| Component            | Security Aspects        | Implementation              |
-| -------------------- | ----------------------- | --------------------------- |
-| `config/settings.py` | API keys, credentials   | Environment variables       |
-| `fetch.py`           | API authentication      | Secure headers, tokens      |
-| `agent.py`           | LLM API access          | Key rotation, rate limiting |
-| Data files           | Sensitive data handling | Access controls, encryption |
+# GCP Credentials
+[gcp_service_account_json]
+type = "service_account"
+project_id = "dashboard-leap"
+private_key = "..."
+client_email = "..."
+```
 
-## Maintenance & Updates
+#### `config/settings.py`
 
-| Component            | Update Frequency           | Version Control          |
-| -------------------- | -------------------------- | ------------------------ |
-| `requirements.txt`   | As needed for new features | Semantic versioning      |
-| `config/settings.py` | Environment changes        | Git-tracked with secrets |
-| Models               | Data distribution changes  | Model versioning         |
-| `README.md`          | Feature additions          | Documentation updates    |
-| Tests                | Code changes               | Automated testing        |
+```python
+# Default configurations
+SPREADSHEET_URL = ""
+SERVICE_ACCOUNT_PATH = "service_account.json"
+SHEET_NAMES = ['DATA_MASTER', 'DATA_ABSENSI', 'DATA_NILAI']
 
-## Troubleshooting Guide
+# AI Analysis Configuration
+SECURITY_ANALYSIS_CONFIG = {
+    'system_instruction': "...",
+    'temperature': 0.3
+}
 
-| Issue                 | Likely Cause         | Solution                                                 |
-| --------------------- | -------------------- | -------------------------------------------------------- |
-| Import errors         | Missing dependencies | `pip install -r requirements.txt`                        |
-| Data loading fails    | Wrong file paths     | Check `config/settings.py` and `.streamlit/secrets.toml` |
-| Model training slow   | Large dataset        | Reduce data size or use sampling                         |
-| Dashboard not loading | Port conflicts       | Change Streamlit port                                    |
-| LLM not responding    | API key issues       | Check `config/settings.py` or `.streamlit/secrets.toml`  |
-| Memory errors         | Large datasets       | Use chunked processing                                   |
+# Data Type Mappings
+DATA_TYPE_MAPPINGS = {
+    'boolean_columns': ['hadir', 'present'],
+    'numeric_columns': ['nilai', 'score'],
+    'date_columns': ['tanggal', 'date']
+}
+```
 
-## Future Enhancements
+## 🤖 AI Integration Architecture
 
-| Area          | Potential Improvements                    |
-| ------------- | ----------------------------------------- |
-| Data Sources  | Add cloud storage, real-time streams      |
-| ML Models     | Deep learning, ensemble methods           |
-| Visualization | 3D plots, real-time dashboards            |
-| AI Features   | Multi-modal analysis, automated reporting |
-| Performance   | Distributed processing, GPU acceleration  |
-| Security      | End-to-end encryption, audit logging      |
+### Gemini AI Pipeline
+
+```mermaid
+graph LR
+    A[Data Summary] --> B[Gemini API]
+    B --> C[System Instructions]
+    C --> D[Security Analysis]
+    D --> E[Recommendations]
+    E --> F[Natural Language Output]
+
+    style B fill:#f3e5f5
+    style D fill:#e8f5e8
+```
+
+### AI Features
+
+| Component                             | Function          | Input                  | Output                  |
+| ------------------------------------- | ----------------- | ---------------------- | ----------------------- |
+| `prepare_data_summary()`              | Data aggregation  | DataFrames             | Structured text summary |
+| `analyze_security()`                  | AI analysis       | Data summary + context | Security insights       |
+| `generate_security_recommendations()` | Actionable advice | Analysis results       | Recommendation list     |
+
+## 📊 Visualization Pipeline
+
+### Chart Generation Flow
+
+```mermaid
+graph TD
+    A[Clean DataFrames] --> B[Chart Functions]
+    B --> C[Plotly Figures]
+    C --> D[Streamlit Display]
+
+    B --> E[create_attendance_chart()]
+    B --> F[create_score_distribution()]
+    B --> G[create_overview_metrics_chart()]
+```
+
+### Interactive Features
+
+- **Real-time Updates**: Data refreshes every 5 minutes
+- **Caching Strategy**: `@st.cache_data(ttl=300)` for performance
+- **Responsive Design**: Mobile-friendly layouts
+- **Expandable Sections**: Detailed analysis in expanders
+
+## 🔄 Caching & Performance
+
+### Cache Strategy
+
+| Component                 | Cache TTL  | Purpose      | Update Trigger |
+| ------------------------- | ---------- | ------------ | -------------- |
+| `load_pipeline_data()`    | 5 minutes  | Data loading | Manual refresh |
+| `get_security_analysis()` | 10 minutes | AI analysis  | Data changes   |
+| Static assets             | Session    | CSS, config  | App restart    |
+
+### Performance Optimizations
+
+- **Lazy Loading**: Data loaded only when needed
+- **Background Processing**: AI analysis cached separately
+- **Memory Management**: DataFrames cleaned after processing
+- **API Rate Limiting**: Respect Google APIs quotas
+
+## 🛡️ Security Architecture
+
+### Data Protection Layers
+
+1. **Transport Security**: HTTPS for all API calls
+2. **Credential Management**: Secrets stored securely in Streamlit
+3. **Access Control**: Service account with minimal permissions
+4. **Data Sanitization**: Input validation and cleaning
+5. **Error Handling**: Secure error messages without data leakage
+
+### AI Security Features
+
+- **Context Isolation**: AI analysis scoped to LKP LEAP data
+- **Prompt Engineering**: Specialized security analysis prompts
+- **Output Filtering**: Sanitized AI responses
+- **Audit Logging**: Analysis activities tracked
+
+## 🚀 Deployment Considerations
+
+### Development Environment
+
+- Local Streamlit server
+- Hot reload for development
+- Debug mode enabled
+
+### Production Deployment
+
+- Streamlit Cloud or dedicated server
+- Environment variables for secrets
+- Monitoring and logging
+- Backup strategies
+
+### Scaling Considerations
+
+- API rate limit management
+- Data size optimization
+- Concurrent user handling
+- Cache invalidation strategies
+
+## 🔧 Maintenance & Monitoring
+
+### Health Checks
+
+- Google Sheets API connectivity
+- Gemini AI API availability
+- Data loading success rates
+- Memory usage monitoring
+
+### Error Recovery
+
+- Graceful degradation on API failures
+- Fallback to cached data
+- User-friendly error messages
+- Automatic retry mechanisms
+
+---
+
+**📊 This architecture ensures reliable, secure, and performant security analysis for LKP LEAP data operations.**

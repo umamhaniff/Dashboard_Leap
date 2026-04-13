@@ -1,64 +1,222 @@
 > [!NOTE] tekan _Ctrl+Shift+V_ untuk preview
 
-# Getting Ready
+# 📋 LEAP Security Dashboard - Setup & Usage Guide
 
-## 1. Verifikasi Instalasi (Prasyarat)
+> [!NOTE] tekan _Ctrl+Shift+V_ untuk preview
 
-Sebelum memulai, pastikan Python dan PIP sudah terinstal dengan benar dan terdeteksi oleh sistem.
-Jalankan perintah berikut di terminal (Command Prompt / PowerShell):
+## 🎯 Project Overview
+
+**LEAP Security Dashboard** adalah aplikasi Streamlit untuk analisis keamanan data LKP LEAP yang terintegrasi dengan Google Sheets dan Google Gemini AI. Dashboard ini fokus pada monitoring keamanan data siswa, analisis absensi, dan deteksi anomali menggunakan AI.
+
+## 🔧 Prerequisites Check
+
+Sebelum memulai, pastikan Python dan PIP sudah terinstal dengan benar:
 
 ```bash
-    where python
-    where pip
+where python
+where pip
 ```
 
-Contoh Output yang Benar:
+**Output yang benar:**
 
-```bash
-    C:\Users\HP\AppData\Local\Programs\Python\Python313\python.exe
-    C:\Users\HP\AppData\Local\Programs\Python\Python313\Scripts\pip.exe
+```
+C:\Users\HP\AppData\Local\Programs\Python\Python313\python.exe
+C:\Users\HP\AppData\Local\Programs\Python\Python313\Scripts\pip.exe
 ```
 
-(Lokasi file mungkin berbeda tergantung instalasi di komputer Anda)
+## 📦 Installation Steps
 
-## 2. Instalasi Dependensi
-
-Install semua library yang diperlukan untuk proyek ini yang tercantum dalam requirements.txt.
-
-- Opsi 1: Instalasi Standar (Disarankan)
+### 1. Install Dependencies
 
 ```bash
-    pip install -r requirements.txt
+# Instalasi standar
+pip install -r requirements.txt
+
+# Atau instalasi quiet (lebih bersih)
+pip install -r requirements.txt -q
 ```
 
-- Opsi 2: Instalasi "Quiet" (Tampilan terminal lebih bersih)
+### 2. Google Cloud Setup
+
+**Wajib untuk functionality penuh:**
+
+1. **Buat Google Cloud Project**
+   - Pergi ke [Google Cloud Console](https://console.cloud.google.com/)
+   - Create new project atau pilih existing
+
+2. **Enable Google Sheets API**
+   - Cari "Google Sheets API" di API Library
+   - Enable API tersebut
+
+3. **Create Service Account**
+   - Pergi ke "IAM & Admin" > "Service Accounts"
+   - Create service account dengan role "Editor"
+   - Download credentials JSON file
+
+4. **Share Google Sheets**
+   - Share spreadsheet dengan service account email
+   - Berikan akses "Editor"
+
+### 3. Gemini AI Setup
+
+1. **Get API Key**
+   - Pergi ke [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - Create API key baru
+
+2. **Configure Secrets**
+   - Edit `.streamlit/secrets.toml`
+   - Masukkan API key dan credentials
+
+## 🚀 Running the Application
+
+### Perintah Utama
 
 ```bash
-    pip install -r requirements.txt -q
+streamlit run app.py
 ```
 
-## 3. Menjalankan Aplikasi
-
-Gunakan salah satu perintah di bawah ini untuk memulai server Streamlit dan membuka aplikasi.
-Perintah Utama:
+### Perintah Alternatif
 
 ```bash
-    streamlit run app.py
+python -m streamlit run app.py
 ```
 
-Perintah Alternatif: Gunakan perintah ini jika perintah utama mengalami kendala path/module:
+> [!TIP] Pastikan terminal dijalankan dari folder project yang berisi `app.py`
+
+## 🎮 Dashboard Features
+
+### 📊 Overview Page
+
+- **Total Sheets**: Jumlah sheet data yang berhasil dimuat
+- **Total Records**: Total baris data
+- **Data Quality**: Persentase data yang valid
+- **Data Preview**: Preview tabel data
+
+### 📅 Absensi Page
+
+- **Tingkat Kehadiran**: Persentase kehadiran keseluruhan
+- **Grafik Kehadiran**: Visualisasi interaktif
+- **Detail per Siswa**: Tabel kehadiran individual
+
+### 🛡️ Security Analysis Page
+
+- **AI Analysis**: Analisis keamanan oleh Google Gemini
+- **Security Recommendations**: Saran perbaikan keamanan
+- **Anomaly Detection**: Deteksi pola mencurigakan
+
+## ⚙️ Configuration Files
+
+### `.streamlit/secrets.toml`
+
+```toml
+# Gemini API Key (wajib)
+GEMINI_API_KEY = "AIzaSy..."
+
+# Google Sheets URL (wajib)
+spreadsheet_url = "https://docs.google.com/spreadsheets/d/.../edit"
+
+# Sheet names (opsional, default sudah ada)
+sheet_names = ["DATA_MASTER", "DATA_ABSENSI", "DATA_NILAI", "DATA_PERTEMUAN"]
+
+# GCP Service Account JSON (wajib untuk full functionality)
+[gcp_service_account_json]
+type = "service_account"
+project_id = "your-project-id"
+private_key_id = "..."
+private_key = "..."
+client_email = "..."
+# ... fields lainnya
+```
+
+### `config/settings.py`
+
+File ini berisi konfigurasi default. Bisa dioverride oleh secrets.toml.
+
+## 🔧 Troubleshooting
+
+### ❌ "Cannot import name 'clean_all_data'"
+
+**Solusi:** Pastikan file `core/data_pipeline.py` memiliki function `clean_all_data`
+
+### ❌ "Failed to load data: ..."
+
+**Solusi:**
+
+- Check Google Sheets URL di secrets.toml
+- Pastikan service account credentials benar
+- Verifikasi spreadsheet sharing permissions
+
+### ❌ "GEMINI_API_KEY not found"
+
+**Solusi:** Tambahkan API key di `.streamlit/secrets.toml`
+
+### ❌ "st.columns must be positive integer"
+
+**Solusi:** Data tidak berhasil dimuat, check konfigurasi Google Sheets
+
+## 📊 Data Structure Expected
+
+Dashboard mengharapkan Google Sheets dengan struktur:
+
+| Sheet Name       | Columns                     | Purpose           |
+| ---------------- | --------------------------- | ----------------- |
+| `DATA_MASTER`    | nama, rombel, dll           | Data master siswa |
+| `DATA_ABSENSI`   | nama, tanggal, hadir        | Data kehadiran    |
+| `DATA_NILAI`     | nama, mata_pelajaran, nilai | Data performa     |
+| `DATA_PERTEMUAN` | tanggal, materi, dll        | Data pertemuan    |
+
+## 🎯 Development Notes
+
+### Menambah Feature Baru
+
+1. Tambah function di folder `core/`
+2. Import di `app.py`
+3. Update UI di halaman yang relevan
+4. Test dengan data sample
+
+### Code Structure
+
+- `app.py`: Main Streamlit application
+- `core/data_pipeline.py`: Data loading & cleaning
+- `core/llm_analyzer.py`: AI security analysis
+- `core/charts.py`: Visualization functions
+- `config/settings.py`: Configuration management
+
+## 📈 Performance Tips
+
+- **Caching**: Data dicache selama 5-10 menit untuk performa
+- **Large Datasets**: Untuk data besar, consider pagination
+- **API Limits**: Monitor Google Sheets API quota
+- **Memory Usage**: Restart app jika memory penuh
+
+## 🔐 Security Best Practices
+
+- Jangan commit `secrets.toml` ke git
+- Gunakan environment variables untuk production
+- Rotate API keys secara berkala
+- Monitor API usage di Google Cloud Console
+
+---
+
+## 🆘 Emergency Commands
+
+**Stop Application**: `Ctrl + C`
+
+**Clear Cache**: Hapus folder `__pycache__` dan restart
+
+**Reset Environment**:
 
 ```bash
-    python -m streamlit run app.py
+deactivate
+rm -rf venv
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
 ---
 
-> [!TIP] Catatan Tambahan  
-> Pastikan Anda menjalankan terminal di dalam folder proyek yang memuat file _app_streamlit.py_ dan _requirements.txt_.  
-> Jika ingin menghentikan aplikasi, tekan Ctrl + C pada terminal.
-
----
+**🎉 Happy Coding! Dashboard LEAP Security siap digunakan.**
 
 ### 📋 Git Cheat Sheet (Lengkap)
 
