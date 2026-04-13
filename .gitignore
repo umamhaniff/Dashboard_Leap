@@ -10,6 +10,8 @@ show/
 
 # Streamlit local config
 .streamlit/
+.streamlit/*.json
+.streamlit/secrets.toml
 
 # Jupyter
 .ipynb_checkpoints/
