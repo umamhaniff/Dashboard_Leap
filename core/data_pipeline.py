@@ -38,7 +38,10 @@ def authenticate_google_sheets() -> gspread.client.Client:
         if creds is None:
             creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_PATH)
 
-        scope = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+        scope = scope = [
+                        'https://www.googleapis.com/auth/spreadsheets',
+                        'https://www.googleapis.com/auth/drive'
+                        ]
         creds = creds.with_scopes(scope)
 
         client = gspread.authorize(creds)

@@ -76,9 +76,12 @@ ERROR_PATTERNS = [
 
 # Data type mappings for automatic conversion
 DATA_TYPE_MAPPINGS = {
-    'date_columns': ['tanggal', 'date', 'waktu', 'time', 'created_at', 'updated_at'],
-    'numeric_columns': ['nilai', 'score', 'skor', 'umur', 'age', 'jumlah', 'count', 'total'],
-    'boolean_columns': ['hadir', 'present', 'aktif', 'active', 'status'],
+    'date_columns': ['tanggal', 'date', 'pertemuan'],
+    'numeric_columns': [
+        'nilai', 'score', 'skor', 'umur', 'age', 'jumlah', 'count', 'total',
+        'tepat_waktu', 'terlambat', 'tidak_hadir', 'persentase' # Tambahkan ini!
+    ],
+    'boolean_columns': ['aktif', 'active', 'hadir'], # Hapus 'status' dari sini!
 }
 
 # Security analysis configuration
@@ -114,8 +117,9 @@ DASHBOARD_CONFIG = {
 def get_config() -> Dict[str, Any]:
     """Get all configuration as dictionary."""
     return {
-        'spreadsheet_id': SPREADSHEET_ID,
+        
         'spreadsheet_url': SPREADSHEET_URL,
+        'spreadsheet_id': SPREADSHEET_ID,
         'service_account_path': SERVICE_ACCOUNT_PATH,
         'service_account_json': SERVICE_ACCOUNT_JSON,
         'sheet_names': SHEET_NAMES,
