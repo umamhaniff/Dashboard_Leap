@@ -14,3 +14,10 @@ langchain-google-genai
 # FIX DEPENDENCY (penting)
 google-generativeai==0.8.6
 google-ai-generativelanguage==0.6.15
+
+# GCP & Sheets Integration
+google-cloud-aiplatform
+google-auth
+gspread
+python-dotenv
+pyyaml

@@ -1,0 +1,27 @@
+.main-header {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #1f77b4;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.metric-card {
+  background-color: #f0f2f6;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border-left: 4px solid #1f77b4;
+}
+.security-alert {
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+.recommendation-box {
+  background-color: #d1ecf1;
+  border: 1px solid #bee5eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 0.5rem 0;
+}

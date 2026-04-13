@@ -43,13 +43,13 @@ Gunakan salah satu perintah di bawah ini untuk memulai server Streamlit dan memb
 Perintah Utama:
 
 ```bash
-    streamlit run main.py
+    streamlit run app.py
 ```
 
 Perintah Alternatif: Gunakan perintah ini jika perintah utama mengalami kendala path/module:
 
 ```bash
-    python -m streamlit run main.py
+    python -m streamlit run app.py
 ```
 
 ---

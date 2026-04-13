@@ -36,34 +36,15 @@ Dashboard Leap is a comprehensive data analytics platform that provides end-to-e
 
 ```
 dashboard_leap/
-├── main.py                 # Entry point
-├── app/
-│   └── app.py             # Streamlit dashboard
-├── src/
-│   ├── api/
-│   │   └── fetch.py       # API and database connections
-│   ├── data/
-│   │   ├── loader.py      # Data loading utilities
-│   │   ├── cleaner.py     # Data cleaning functions
-│   │   └── transformer.py # Data transformation
-│   ├── models/
-│   │   ├── train.py       # Model training
-│   │   └── predict.py     # Model predictions
-│   ├── visualization/
-│   │   ├── plot.py        # Static plots
-│   │   └── interactive.py # Interactive plots
-│   └── llm/
-│       └── agent.py       # LLM integration
+├── app.py                 # Streamlit dashboard entry point
 ├── config/
-│   └── db.yaml            # Configuration file
-├── data/
-│   ├── raw/               # Raw data files
-│   ├── processed/         # Processed data
-│   └── staging/           # Intermediate data
-├── notebooks/
-│   └── eda.ipynb          # Exploratory analysis
-├── reports/
-│   └── figures/           # Generated plots
+│   └── settings.py        # Configuration for Google Sheets, GCP, app settings
+├── core/
+│   ├── data_pipeline.py   # Data ingestion and cleaning
+│   ├── llm_analyzer.py    # Gemini AI security analysis
+│   └── charts.py          # Plotly visualization helpers
+├── styles/
+│   └── style.css          # Shared CSS for the dashboard
 └── requirements.txt       # Python dependencies
 ```
 
@@ -89,14 +70,20 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Configure API keys in `config/db.yaml`
+4. Configure API keys in `config/settings.py` or `.streamlit/secrets.toml`
 
 ## Usage
 
 ### Running the Dashboard
 
 ```bash
-python main.py
+python app.py
+```
+
+Atau:
+
+```bash
+streamlit run app.py
 ```
 
 This will launch the Streamlit dashboard where you can:
@@ -124,11 +111,14 @@ results = train_model_pipeline(cleaned_data, target_col='target_column')
 
 ## Configuration
 
-Edit `config/db.yaml` to configure:
+Edit `config/settings.py` to configure:
 
-- Database connections
-- API endpoints and keys
-- Model parameters
+- Google Sheets URL/ID
+- Service account path
+- Sheet names
+- Project ID and app settings
+
+For secret overrides, use `.streamlit/secrets.toml`.
 
 ## Data Flow
 
