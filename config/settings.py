@@ -61,7 +61,7 @@ SHEET_NAMES = _streamlit_secrets.get('sheet_names', [
     'DATA_MASTER',
     'DATA_ABSENSI',
     'DATA_NILAI',
-    'DATA_PERTEMUAN',
+    'DATA_OVERVIEW',
     # Tambahkan sheet lainnya sesuai kebutuhan
 ])
 
