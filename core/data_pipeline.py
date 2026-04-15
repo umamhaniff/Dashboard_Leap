@@ -128,50 +128,22 @@ def load_sheet_to_dataframe(sheet_name: str) -> pd.DataFrame:
         raise
 
 def _apply_data_types(df: pd.DataFrame, sheet_name: str) -> pd.DataFrame:
-    """Apply appropriate data types based on column patterns."""
-    if df.empty:
-        return df
-
-    date_columns = DATA_TYPE_MAPPINGS['date_columns']
-    numeric_columns = DATA_TYPE_MAPPINGS['numeric_columns']
-    boolean_columns = DATA_TYPE_MAPPINGS['boolean_columns']
-
+    """Konversi cerdas: Teks tetap teks, Angka tetap angka, Persen tetap tampil."""
+    if df.empty: return df
+    
+    num_cols = ['tepat_waktu', 'terlambat', 'tidak_hadir', 'total', 'score']
+    
     for col in df.columns:
         col_lower = col.lower()
-
-        # Convert date columns
-        if any(date_pattern in col_lower for date_pattern in date_columns):
-            try:
-                df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
-                logger.info(f"Converted column '{col}' to datetime")
-            except Exception as e:
-                logger.warning(f"Could not convert column '{col}' to datetime: {str(e)}")
-
-        # Convert numeric columns
-        elif any(num_pattern in col_lower for num_pattern in numeric_columns):
-            try:
-                df[col] = df[col].astype(str).str.replace(',', '').str.replace(' ', '')
-                df[col] = pd.to_numeric(df[col], errors='coerce')
-                logger.info(f"Converted column '{col}' to numeric")
-            except Exception as e:
-                logger.warning(f"Could not convert column '{col}' to numeric: {str(e)}")
-
-        # Convert boolean columns
-        elif any(bool_pattern in col_lower for bool_pattern in boolean_columns):
-            try:
-                df[col] = df[col].astype(str).str.lower().str.strip()
-                df[col] = df[col].replace({
-                    'ya': True, 'yes': True, 'true': True, '1': True, 'hadir': True, 'present': True,
-                    'tidak': False, 'no': False, 'false': False, '0': False, '': False, 'nan': False
-                }).fillna(False)
-                logger.info(f"Converted column '{col}' to boolean")
-            except Exception as e:
-                logger.warning(f"Could not convert column '{col}' to boolean: {str(e)}")
-
-        # Default: keep as string but clean whitespace
-        else:
+        # 1. Jika kolom Persentase, biarkan string agar % tidak hilang
+        if 'persentase' in col_lower or '%' in col:
             df[col] = df[col].astype(str).str.strip()
-
+        # 2. Jika kolom Angka Murni
+        elif any(n in col_lower for n in num_cols):
+            df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', '.'), errors='coerce')
+        # 3. Sisanya String (Teks biasa)
+        else:
+            df[col] = df[col].astype(str).str.strip().replace('nan', '')
     return df
 
 def load_all_data() -> Dict[str, pd.DataFrame]:
@@ -222,38 +194,11 @@ def clean_google_sheets_errors(df: pd.DataFrame) -> pd.DataFrame:
     return df_clean
 
 def clean_attendance_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Specialized cleaning for attendance/absensi data."""
+    """Hanya merapikan teks, tanpa mengubah jadi boolean/checklist."""
     df_clean = df.copy()
-
-    # Standardize attendance status columns
-    attendance_cols = [col for col in df_clean.columns if 'hadir' in col.lower() or 'absen' in col.lower() or 'status' in col.lower()]
-
+    attendance_cols = [col for col in df_clean.columns if 'status' in col.lower() or 'hadir' in col.lower()]
     for col in attendance_cols:
-        df_clean[col] = df_clean[col].astype(str).str.lower().str.strip()
-
-        # Standardize attendance values
-        df_clean[col] = df_clean[col].replace({
-            'hadir': 'Hadir',
-            'present': 'Hadir',
-            'ya': 'Hadir',
-            'y': 'Hadir',
-            '1': 'Hadir',
-            'true': 'Hadir',
-            'absen': 'Tidak Hadir',
-            'absent': 'Tidak Hadir',
-            'tidak': 'Tidak Hadir',
-            'no': 'Tidak Hadir',
-            'n': 'Tidak Hadir',
-            '0': 'Tidak Hadir',
-            'false': 'Tidak Hadir',
-            '': 'Tidak Hadir',
-            'nan': 'Tidak Hadir'
-        })
-
-        # Convert to boolean for easier analysis
-        df_clean[col] = df_clean[col].map({'Hadir': True, 'Tidak Hadir': False})
-
-    logger.info(f"Cleaned attendance data for {len(attendance_cols)} columns")
+        df_clean[col] = df_clean[col].astype(str).str.strip()
     return df_clean
 
 def clean_master_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -300,54 +245,19 @@ def clean_score_data(df: pd.DataFrame) -> pd.DataFrame:
     return df_clean
 
 def handle_missing_values(df: pd.DataFrame, strategy: str = 'auto') -> pd.DataFrame:
-    """Handle missing values based on column type and context."""
+    """Mencegah kolom penting seperti 'Catatan' dihapus otomatis."""
     df_clean = df.copy()
-
+    # List kolom yang HARUS tetap ada meski banyak kosong
+    protected_cols = ['catatan', 'keterangan', 'asal_sekolah', 'nama_siswa']
+    
     for col in df_clean.columns:
-        missing_count = df_clean[col].isnull().sum()
-        if missing_count == 0:
+        if any(p in col.lower() for p in protected_cols):
+            df_clean[col] = df_clean[col].fillna('') # Isi kosong dengan string kosong saja
             continue
-
-        col_lower = col.lower()
-
-        if strategy == 'drop':
-            df_clean = df_clean.dropna(subset=[col])
-        elif strategy == 'auto':
-            # Auto strategy based on column type
-            if any(keyword in col_lower for keyword in ['nama', 'name', 'rombel', 'kelas']):
-                # For identifier columns, keep as is
-                pass
-            elif any(keyword in col_lower for keyword in ['nilai', 'score', 'skor']):
-                # For scores, fill with mean
-                if df_clean[col].dtype in ['int64', 'float64']:
-                    df_clean[col] = df_clean[col].fillna(df_clean[col].mean())
-                else:
-                    # Try to convert to numeric first
-                    try:
-                        numeric_series = pd.to_numeric(df_clean[col], errors='coerce')
-                        if numeric_series.notna().any():
-                            mean_val = numeric_series.mean()
-                            df_clean[col] = numeric_series.fillna(mean_val)
-                    except:
-                        pass  # Keep original if conversion fails
-            elif any(keyword in col_lower for keyword in ['hadir', 'absen', 'status']):
-                # For attendance, assume not present
-                df_clean[col] = df_clean[col].fillna(False)
-            else:
-                # For other columns, fill with mode or drop if too many missing
-                if missing_count / len(df_clean) > 0.5:
-                    df_clean = df_clean.drop(columns=[col])
-                    logger.warning(f"Dropped column '{col}' due to >50% missing values")
-                else:
-                    # Fill with mode for categorical, mean for numeric
-                    if df_clean[col].dtype == 'object':
-                        mode_val = df_clean[col].mode()
-                        if not mode_val.empty:
-                            df_clean[col] = df_clean[col].fillna(mode_val.iloc[0])
-                        elif df_clean[col].dtype in ['int64', 'float64']:
-                            df_clean[col] = df_clean[col].fillna(df_clean[col].mean())
-                        # Skip mean calculation for other dtypes to avoid errors
-
+            
+        missing_count = df_clean[col].isnull().sum()
+        if missing_count / len(df_clean) > 0.8: # Longgarkan threshold jadi 80%
+            df_clean = df_clean.drop(columns=[col])
     return df_clean
 
 def clean_all_data(dataframes: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:

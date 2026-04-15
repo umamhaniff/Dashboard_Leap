@@ -76,12 +76,8 @@ ERROR_PATTERNS = [
 
 # Data type mappings for automatic conversion
 DATA_TYPE_MAPPINGS = {
-    'date_columns': ['tanggal', 'date', 'pertemuan'],
-    'numeric_columns': [
-        'nilai', 'score', 'skor', 'umur', 'age', 'jumlah', 'count', 'total',
-        'tepat_waktu', 'terlambat', 'tidak_hadir', 'persentase' # Tambahkan ini!
-    ],
-    'boolean_columns': ['aktif', 'active', 'hadir'], # Hapus 'status' dari sini!
+    'date_columns': ['tanggal'],
+    'numeric_columns': ['tepat_waktu', 'terlambat', 'tidak_hadir', 'total', 'score']
 }
 
 # Security analysis configuration
@@ -104,9 +100,8 @@ Berikan analisis yang objektif dan berbasis data, spesifik dengan contoh, dan me
 
 # Dashboard configuration
 DASHBOARD_CONFIG = {
-    'title': '🛡️ LEAP Security Dashboard',
-    'subtitle': 'Sistem Analisis Keamanan Data LKP LEAP',
-    'pages': ['Overview', 'Absensi', 'Security Analysis'],
+    'title': 'EduDecision AI', # Ganti nama di sini
+    'subtitle': 'Sistem Analisis Keputusan & Keamanan Data LKP LEAP',
     'theme': {
         'primary_color': '#1f77b4',
         'background_color': '#f0f2f6',
