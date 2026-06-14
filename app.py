@@ -167,28 +167,60 @@ st.sidebar.markdown('<h3 style="text-align: center; font-family: General Sans, s
 st.sidebar.markdown('<p style="text-align: center; color: var(--text-color); opacity: 0.7; font-size: 12px; margin-bottom: 20px;">Sistem Analisis Keputusan LKP LEAP</p>', unsafe_allow_html=True)
 st.sidebar.markdown('---')
 
-# Navigation Radio for Data Source Selection
-source_options = {
-    "📊 Google Sheets (Academic)": "google_sheets",
-    "🗄️ Database SQL (Operations)": "mariadb"
-}
-
-# Determine default index
-current_source = st.session_state.selected_source
-default_index = 0
-if current_source == "mariadb":
-    default_index = 1
-
-selected_label = st.sidebar.radio(
-    "Navigasi Data",
-    options=list(source_options.keys()),
-    index=default_index,
-    key="active_source_radio"
+# 1. Main Module Selector
+selected_source_label = st.sidebar.selectbox(
+    "Pilih Sumber Data:",
+    ["📊 Google Sheets (Academic)", "🗄️ Database SQL (Operations)"],
+    index=0 if st.session_state.selected_source == 'google_sheets' else 1
 )
+new_source = "google_sheets" if "Google Sheets" in selected_source_label else "mariadb"
 
-new_source = source_options[selected_label]
 if new_source != st.session_state.selected_source:
     st.session_state.selected_source = new_source
+    st.session_state.selected_feature = None  # Reset selected feature
+    st.session_state.run_analysis = False
+    st.session_state.analysis_result = None
+    st.rerun()
+
+st.sidebar.markdown('---')
+
+# 2. Page Navigation / Feature Selector
+if st.session_state.selected_source == 'google_sheets':
+    features = {
+        "📊 Performa Akademik & Grade": "academic_perf",
+        "⏱️ Kehadiran & Ketidakhadiran": "attendance",
+        "🚪 Analisis Siswa Keluar (Churn)": "churn",
+        "🔍 Data Preview (Google Sheets)": "preview_sheets"
+    }
+else:
+    features = {
+        "👤 Student 360 View": "student_360",
+        "🏫 Rombel & Persetujuan Rapor": "rombel",
+        "🔍 Kasus Observasi (CS)": "cs_cases",
+        "📝 Audit Remedial": "remedial_audit",
+        "🔍 Data Preview (Database SQL)": "preview_sql"
+    }
+
+# Ensure selected_feature is initialized and valid for current source
+if 'selected_feature' not in st.session_state or st.session_state.selected_feature not in features.values():
+    st.session_state.selected_feature = list(features.values())[0]
+
+# Find the label for current selection
+default_feature_index = 0
+try:
+    default_feature_index = list(features.values()).index(st.session_state.selected_feature)
+except ValueError:
+    pass
+
+selected_feature_label = st.sidebar.radio(
+    "Pilih Modul / Fitur:",
+    options=list(features.keys()),
+    index=default_feature_index
+)
+
+new_feature = features[selected_feature_label]
+if new_feature != st.session_state.selected_feature:
+    st.session_state.selected_feature = new_feature
     st.session_state.run_analysis = False
     st.session_state.analysis_result = None
     st.rerun()
@@ -199,6 +231,7 @@ st.sidebar.markdown('---')
 if st.sidebar.button("🚪 Sign Out", use_container_width=True, type="secondary"):
     st.session_state.logged_in = False
     st.session_state.selected_source = 'google_sheets'  # reset to default
+    st.session_state.selected_feature = 'academic_perf'
     st.session_state.run_analysis = False
     st.session_state.analysis_result = None
     st.rerun()
@@ -206,6 +239,8 @@ if st.sidebar.button("🚪 Sign Out", use_container_width=True, type="secondary"
 st.markdown("---")
 
 # --- LOADING AND DASHBOARD RENDERING ---
+
+from core.llm_analyzer import analyze_feature, analyze_student_profile
 
 if st.session_state.selected_source == 'google_sheets':
     # --- MODUL A: GOOGLE SHEETS (ABSENSI & NILAI) ---
@@ -250,11 +285,11 @@ if st.session_state.selected_source == 'google_sheets':
 
     c3.metric("Rata-rata Nilai (Final)", f"{avg_final:.2f}")
     c4.metric("Siswa Perlu Remidi", f"{total_remidi}")
+    
+    st.markdown("---")
 
-    # Layout with Tabs
-    tab1, tab2, tab3 = st.tabs(["📊 Performa Akademik & Grade", "⏱️ Kehadiran & Ketidakhadiran", "🚪 Analisis Siswa Keluar (Churn)"])
-
-    with tab1:
+    # Render specific feature content based on selection
+    if st.session_state.selected_feature == "academic_perf":
         st.markdown("### 📊 Sebaran Grade & Performa Nilai")
         col_graph1, col_graph2 = st.columns(2)
         with col_graph1:
@@ -291,8 +326,17 @@ if st.session_state.selected_source == 'google_sheets':
                 '</div>',
                 unsafe_allow_html=True
             )
+            
+        st.markdown("---")
+        if st.button("🤖 Jalankan Analisis AI Performa Akademik", type="primary"):
+            st.session_state.run_analysis = True
+            
+        if st.session_state.run_analysis:
+            with st.spinner("Gemini sedang menganalisis performa akademik..."):
+                st.session_state.analysis_result = analyze_feature(cleaned_data, "academic_perf")
+            st.markdown(f'<div class="genesis-ai-panel"><h3>💡 Hasil Analisis AI Performa Akademik</h3>{st.session_state.analysis_result}</div>', unsafe_allow_html=True)
 
-    with tab2:
+    elif st.session_state.selected_feature == "attendance":
         st.markdown("### ⏱️ Analisis Kehadiran Siswa")
         col_att1, col_att2 = st.columns(2)
         with col_att1:
@@ -316,9 +360,18 @@ if st.session_state.selected_source == 'google_sheets':
             '</div>',
             unsafe_allow_html=True
         )
+        
+        st.markdown("---")
+        if st.button("🤖 Jalankan Analisis AI Kehadiran Siswa", type="primary"):
+            st.session_state.run_analysis = True
+            
+        if st.session_state.run_analysis:
+            with st.spinner("Gemini sedang menganalisis tren kehadiran..."):
+                st.session_state.analysis_result = analyze_feature(cleaned_data, "attendance")
+            st.markdown(f'<div class="genesis-ai-panel"><h3>💡 Hasil Analisis AI Kehadiran</h3>{st.session_state.analysis_result}</div>', unsafe_allow_html=True)
 
-    with tab3:
-        st.markdown("### 🚪 Analisis Siswa Keluar")
+    elif st.session_state.selected_feature == "churn":
+        st.markdown("### 🚪 Analisis Siswa Keluar (Churn)")
         keluar_df = cleaned_data.get("DATA_KELUAR", pd.DataFrame())
         
         col_out1, col_out2 = st.columns(2)
@@ -341,26 +394,25 @@ if st.session_state.selected_source == 'google_sheets':
         if not keluar_df.empty:
             st.markdown("#### Daftar Siswa Keluar & Pengganti")
             st.dataframe(keluar_df, use_container_width=True)
+            
+        st.markdown("---")
+        if st.button("🤖 Jalankan Analisis AI Churn & Retensi Siswa", type="primary"):
+            st.session_state.run_analysis = True
+            
+        if st.session_state.run_analysis:
+            with st.spinner("Gemini sedang menganalisis risiko churn..."):
+                st.session_state.analysis_result = analyze_feature(cleaned_data, "churn")
+            st.markdown(f'<div class="genesis-ai-panel"><h3>💡 Hasil Analisis AI Retensi & Churn</h3>{st.session_state.analysis_result}</div>', unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.subheader("🔍 Data Preview (Direct Access)")
-    display_map = {k: k.replace('DATA_', '').title() for k in cleaned_data.keys()}
-    reverse_map = {v: k for k, v in display_map.items()}
-    options = list(display_map.values())
-    default_idx = options.index("Master") if "Master" in options else 0
-    selected_display = st.selectbox("Pilih Tabel:", options, index=default_idx)
-    selected_real_key = reverse_map[selected_display]
-    st.dataframe(cleaned_data[selected_real_key], use_container_width=True, height=300)
-
-    st.markdown("---")
-    if st.button("🤖 Jalankan Analisis AI Absensi & Nilai (Academic Engine)", type="primary"):
-        st.session_state.run_analysis = True
-
-    if st.session_state.run_analysis:
-        with st.spinner("Gemini sedang menganalisis performa akademik..."):
-            st.session_state.analysis_result = analyze_security(cleaned_data, "google_sheets")
-        
-        st.markdown(f'<div class="genesis-ai-panel"><h3>💡 Hasil Rekomendasi AI</h3>{st.session_state.analysis_result}</div>', unsafe_allow_html=True)
+    elif st.session_state.selected_feature == "preview_sheets":
+        st.markdown("### 🔍 Data Preview (Direct Access)")
+        display_map = {k: k.replace('DATA_', '').title() for k in cleaned_data.keys()}
+        reverse_map = {v: k for k, v in display_map.items()}
+        options = list(display_map.values())
+        default_idx = options.index("Master") if "Master" in options else 0
+        selected_display = st.selectbox("Pilih Tabel:", options, index=default_idx)
+        selected_real_key = reverse_map[selected_display]
+        st.dataframe(cleaned_data[selected_real_key], use_container_width=True, height=400)
 
 else:
     # --- MODUL B: DATABASE SQL (PROFIL & RELASI SISWA) ---
@@ -398,11 +450,10 @@ else:
     c2.metric("Rombel Aktif", f"{total_rombel}")
     c3.metric("Persetujuan Rapor", f"{rapor_acc_pct:.1f}%")
     c4.metric("Kasus Observasi", f"{cases_count}")
+    
+    st.markdown("---")
 
-    # Layout with Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["👤 Student 360 View", "🏫 Rombel & Persetujuan Rapor", "🔍 Kasus Observasi (CS)", "📝 Audit Remedial"])
-
-    with tab1:
+    if st.session_state.selected_feature == "student_360":
         st.markdown("### 👤 Student 360 View")
         if siswa_df.empty:
             st.info("Data siswa kosong.")
@@ -467,8 +518,23 @@ else:
                         f'</div>',
                         unsafe_allow_html=True
                     )
+            
+            st.markdown("---")
+            if st.button(f"🤖 Hubungi AI Konsultan Pendidikan untuk {selected_student_name}", type="primary"):
+                st.session_state.run_analysis = True
+                
+            if st.session_state.run_analysis:
+                with st.spinner(f"Gemini sedang memproses Student 360 untuk {selected_student_name}..."):
+                    student_info = {
+                        "profil": student_row.to_dict(),
+                        "kursus": kursus_siswa_df[kursus_siswa_df["id_siswa"] == id_siswa] if not kursus_siswa_df.empty else pd.DataFrame(),
+                        "jadwal": jadwal_siswa_df[jadwal_siswa_df["id_siswa"] == id_siswa] if not jadwal_siswa_df.empty else pd.DataFrame(),
+                        "catatan": catatan_siswa_df[catatan_siswa_df["id_siswa"] == id_siswa] if not catatan_siswa_df.empty else pd.DataFrame()
+                    }
+                    st.session_state.analysis_result = analyze_student_profile(selected_student_name, student_info)
+                st.markdown(f'<div class="genesis-ai-panel"><h3>💡 Konsultasi AI Siswa: {selected_student_name}</h3>{st.session_state.analysis_result}</div>', unsafe_allow_html=True)
 
-    with tab2:
+    elif st.session_state.selected_feature == "rombel":
         st.markdown("### 🏫 Distribusi Rombel & Persetujuan Rapor")
         col_r1, col_r2 = st.columns(2)
         with col_r1:
@@ -482,40 +548,55 @@ else:
                 acc_df.columns = ["is_acc_rapor", "count"]
                 acc_df["status"] = acc_df["is_acc_rapor"].apply(lambda x: "Disetujui" if x == 1 else "Pending (Perlu Persetujuan)")
                 st.dataframe(acc_df[["status", "count"]], use_container_width=True)
+                
+        st.markdown("---")
+        if st.button("🤖 Jalankan Audit AI Operasional Kelas & Rapor", type="primary"):
+            st.session_state.run_analysis = True
+            
+        if st.session_state.run_analysis:
+            with st.spinner("Gemini sedang mengaudit operasional kelas dan rapor..."):
+                st.session_state.analysis_result = analyze_feature(db_data, "rombel")
+            st.markdown(f'<div class="genesis-ai-panel"><h3>💡 Hasil Audit AI Rombel & Rapor</h3>{st.session_state.analysis_result}</div>', unsafe_allow_html=True)
 
-    with tab3:
+    elif st.session_state.selected_feature == "cs_cases":
         st.markdown("### 🔍 Kasus Observasi Siswa (CRM/CS)")
         if catatan_siswa_df.empty:
             st.write("Tidak ada kasus observasi siswa.")
         else:
-            # Join with siswa to display names
             merged_cases = catatan_siswa_df.merge(siswa_df, on="id_siswa", how="left")
             st.dataframe(merged_cases[["nama_lengkap", "catatan", "status_followup"]], use_container_width=True)
+            
+        st.markdown("---")
+        if st.button("🤖 Jalankan Analisis AI Kasus CS & Layanan Konseling", type="primary"):
+            st.session_state.run_analysis = True
+            
+        if st.session_state.run_analysis:
+            with st.spinner("Gemini sedang menganalisis kasus CS..."):
+                st.session_state.analysis_result = analyze_feature(db_data, "cs_cases")
+            st.markdown(f'<div class="genesis-ai-panel"><h3>💡 Hasil Analisis AI Kasus CS</h3>{st.session_state.analysis_result}</div>', unsafe_allow_html=True)
 
-    with tab4:
+    elif st.session_state.selected_feature == "remedial_audit":
         st.markdown("### 📝 Audit Remedial Database")
         if catatan_remidi_siswa_df.empty:
             st.write("Tidak ada log remedial siswa.")
         else:
             merged_remidi = catatan_remidi_siswa_df.merge(siswa_df, on="id_siswa", how="left")
             st.dataframe(merged_remidi[["nama_lengkap", "nilai_sebelum", "nilai_sesudah", "persetujuan_guru"]], use_container_width=True)
+            
+        st.markdown("---")
+        if st.button("🤖 Jalankan Audit AI Log Remedial Akademik", type="primary"):
+            st.session_state.run_analysis = True
+            
+        if st.session_state.run_analysis:
+            with st.spinner("Gemini sedang mengaudit data remedial..."):
+                st.session_state.analysis_result = analyze_feature(db_data, "remedial_audit")
+            st.markdown(f'<div class="genesis-ai-panel"><h3>💡 Hasil Audit AI Remedial</h3>{st.session_state.analysis_result}</div>', unsafe_allow_html=True)
 
-    # Data Preview (Direct Access)
-    st.markdown("---")
-    st.subheader("🔍 Data Preview (Database Tables)")
-    db_keys = list(db_data.keys())
-    selected_db_key = st.selectbox("Pilih Tabel Database:", db_keys)
-    st.dataframe(db_data[selected_db_key], use_container_width=True, height=300)
-
-    st.markdown("---")
-    if st.button("🤖 Jalankan Audit AI Database (Operations Engine)", type="primary"):
-        st.session_state.run_analysis = True
-
-    if st.session_state.run_analysis:
-        with st.spinner("Gemini sedang melakukan audit database..."):
-            st.session_state.analysis_result = analyze_security(db_data, "mariadb")
-        
-        st.markdown(f'<div class="genesis-ai-panel"><h3>💡 Hasil Audit AI Database</h3>{st.session_state.analysis_result}</div>', unsafe_allow_html=True)
+    elif st.session_state.selected_feature == "preview_sql":
+        st.markdown("### 🔍 Data Preview (Database Tables)")
+        db_keys = list(db_data.keys())
+        selected_db_key = st.selectbox("Pilih Tabel Database:", db_keys)
+        st.dataframe(db_data[selected_db_key], use_container_width=True, height=400)
 
 # --- FOOTER ---
 st.caption(f"EduDecision AI v2.0 | Last Sync: {datetime.now().strftime('%H:%M:%S')}")
