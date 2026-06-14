@@ -38,3 +38,7 @@ data/staging/
 # IDE/editor settings
 .vscode/
 .idea/
+
+# Agentic settings
+.gemini/
+.superpowers/

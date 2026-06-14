@@ -1,139 +1,203 @@
-"""
-EduDecision AI - Streamlit Application.
-Optimized for Single-Page Layout & On-Demand AI Analysis.
-"""
-
 import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
 import google.generativeai as genai
 
-from core.data_pipeline import load_all_data, clean_all_data, get_data_quality_report
+from core.data_pipeline import load_all_data, clean_all_data, get_data_quality_report, load_mariadb_data
 from core.llm_analyzer import analyze_security, generate_security_recommendations
-from core.charts import create_attendance_chart
+from core.charts import create_attendance_chart, create_score_distribution
 from config.settings import DASHBOARD_CONFIG, SPREADSHEET_URL
 
-# --- PAGE CONFIG ---
-st.set_page_config(
-    page_title=DASHBOARD_CONFIG['title'],
-    page_icon="🛡️",
-    layout="wide"
-)
+# --- LOAD STYLING ---
+def local_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+local_css("styles/style.css")
 
 # --- INITIALIZE SESSION STATE ---
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+if 'selected_source' not in st.session_state:
+    st.session_state.selected_source = None
 if 'run_analysis' not in st.session_state:
     st.session_state.run_analysis = False
 if 'analysis_result' not in st.session_state:
     st.session_state.analysis_result = None
 
-# --- DATA PIPELINE (OPTIMIZED) ---
-@st.cache_data(ttl=300, show_spinner=False) # Hilangkan spinner default cache
-def load_pipeline_data():
-    try:
-        raw_data = load_all_data()
-        cleaned_data = clean_all_data(raw_data)
-        quality_report = get_data_quality_report(cleaned_data)
-        return raw_data, cleaned_data, quality_report
-    except Exception as e:
-        return {}, {}, {}
+# --- HTML TEMPLATES ---
+st.markdown('<div class="apple-global-nav"><span> EduDecision AI</span><span>Overview | Analytics | Logs</span></div>', unsafe_allow_html=True)
 
-# --- HEADER SECTION ---
-st.markdown(f'<h1 class="main-header">🛡️ {DASHBOARD_CONFIG["title"]}</h1>', unsafe_allow_html=True)
-
-# --- 3 NEW BUTTONS BELOW HEADER ---
-col_btn1, col_btn2, col_btn3, col_spacer = st.columns([1, 1, 1, 3])
-
-with col_btn1:
-    if st.button("🔄 Refresh Data", use_container_width=True):
-        st.cache_data.clear()
-        st.session_state.analysis_result = None
-        st.session_state.run_analysis = False
-        st.rerun()
-
-with col_btn2:
-    if st.button("🤖 Run AI Analysis", use_container_width=True, type="primary"):
-        st.session_state.run_analysis = True
-
-with col_btn3:
-    st.link_button("📊 Open Spreadsheet", SPREADSHEET_URL, use_container_width=True)
-
-st.markdown("---")
-
-# --- LOADING DATA (SINGLE SPINNER) ---
-# Menggabungkan loading agar tidak tumpang tindih
-with st.spinner("Sinkronisasi data EduDecision AI..."):
-    raw_data, cleaned_data, quality_report = load_pipeline_data()
-
-if not cleaned_data:
-    st.error("Gagal menarik data. Cek koneksi atau konfigurasi SPS.")
+# --- PASSWORD GATE ---
+if not st.session_state.logged_in:
+    col_l1, col_l2, col_l3 = st.columns([1, 2, 1])
+    with col_l2:
+        st.markdown('<div style="text-align: center; margin-top: 50px; font-size: 50px;">🛡️</div>', unsafe_allow_html=True)
+        st.markdown('<h2 style="text-align: center; font-family: SF Pro Display; font-weight: 600;">Sign in to EduDecision AI</h2>', unsafe_allow_html=True)
+        st.markdown('<p style="text-align: center; color: #7a7a7a; margin-bottom: 30px;">Gunakan password sistem LKP LEAP.</p>', unsafe_allow_html=True)
+        
+        password = st.text_input("Enter Password", type="password", label_visibility="collapsed")
+        
+        if st.button("Sign In", use_container_width=True, type="primary"):
+            target_pass = st.secrets.get("SYSTEM_PASSWORD", "leapadmin2026")
+            if password == target_pass:
+                st.session_state.logged_in = True
+                st.rerun()
+            else:
+                st.error("Password salah. Silakan hubungi administrator.")
     st.stop()
 
-# --- SIDEBAR DEBUG (AS REQUESTED) ---
-def display_sidebar_debug(cleaned_data):
-    st.sidebar.subheader("🛠️ Debug Center")
-    with st.sidebar.expander("🔍 Gemini Models", expanded=False):
-        try:
-            api_key = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
-            if api_key:
-                genai.configure(api_key=api_key)
-                models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                st.json({"status": "Connected", "models": models})
-        except Exception as e:
-            st.json({"status": "Error", "message": str(e)})
-
-    with st.sidebar.expander("📊 Data Inventory", expanded=False):
-        inventory = {sheet: {"rows": len(df), "cols": len(df.columns)} for sheet, df in cleaned_data.items()}
-        st.json(inventory)
-
-display_sidebar_debug(cleaned_data)
-
-def display_overview_page(cleaned_data, quality_report):
-    st.header("📊 Data Overview")
-
-# --- SECTION 1: OVERVIEW METRICS ---
-c1, c2, c3 = st.columns(3)
-total_rec = sum(len(df) for df in cleaned_data.values())
-c1.metric("Total Records", f"{total_rec:,}")
-c2.metric("Data Quality", f"{100 - quality_report.get('overall_quality', {}).get('overall_missing_percentage', 0):.1f}%")
-c3.metric("Sheets Active", len(cleaned_data))
-
-st.subheader("🔍 Data Preview (Direct Access)")
-if cleaned_data:
-    # Mapping nama sheet: DATA_MASTER -> Master
-    display_map = {k: k.replace('DATA_', '').title() for k in cleaned_data.keys()}
-    reverse_map = {v: k for k, v in display_map.items()}
+# --- SOURCE SELECTION ---
+if st.session_state.selected_source is None:
+    st.markdown('<h2 style="text-align: center; font-family: SF Pro Display; margin-top: 40px;">Pilih Sumber Data Utama</h2>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align: center; color: #7a7a7a; margin-bottom: 40px;">Tentukan data yang ingin dianalisis saat ini.</p>', unsafe_allow_html=True)
     
-    # Cari index "Master" untuk jadi default
-    options = list(display_map.values())
-    default_idx = options.index("Master") if "Master" in options else 0
+    col_s1, col_s2 = st.columns(2)
     
-    selected_display = st.selectbox("Pilih Tabel:", options, index=default_idx)
-    selected_real_key = reverse_map[selected_display]
-    
-    st.dataframe(cleaned_data[selected_real_key], use_container_width=True, height=400)
+    with col_s1:
+        st.markdown('<div style="background: white; border: 1px solid #e0e0e0; border-radius: 18px; padding: 25px; text-align: center; height: 180px;">'
+                    '<h3>📊 Google Sheets</h3>'
+                    '<p style="color: 7a7a7a; font-size: 14px;">Laporan Akademik, Nilai, Kehadiran, & Remidi Siswa.</p>'
+                    '</div>', unsafe_allow_html=True)
+        if st.button("Pilih Google Sheets", key="btn_sheets", use_container_width=True, type="primary"):
+            st.session_state.selected_source = 'google_sheets'
+            st.session_state.run_analysis = False
+            st.session_state.analysis_result = None
+            st.rerun()
+            
+    with col_s2:
+        st.markdown('<div style="background: white; border: 1px solid #e0e0e0; border-radius: 18px; padding: 25px; text-align: center; height: 180px;">'
+                    '<h3>🗄️ MariaDB Database</h3>'
+                    '<p style="color: 7a7a7a; font-size: 14px;">Log Profil Siswa Aktif, Status Rombel, & Catatan Kualitatif.</p>'
+                    '</div>', unsafe_allow_html=True)
+        if st.button("Pilih MariaDB Database", key="btn_mariadb", use_container_width=True, type="primary"):
+            st.session_state.selected_source = 'mariadb'
+            st.session_state.run_analysis = False
+            st.session_state.analysis_result = None
+            st.rerun()
+            
+    st.stop()
 
-# --- SECTION 3: LLM SECURITY INTELLIGENCE (ON DEMAND) ---
+# --- SUB NAV FROSTED BAR ---
+col_sub1, col_sub2 = st.columns([3, 1])
+with col_sub1:
+    source_title = "Google Sheets (Akademik)" if st.session_state.selected_source == 'google_sheets' else "MariaDB (Profil Siswa)"
+    st.markdown(f'<div style="font-family: SF Pro Display; font-size: 22px; font-weight: 600; padding: 10px 0;">Active Source: {source_title}</div>', unsafe_allow_html=True)
+
+with col_sub2:
+    st.write("")
+    col_c1, col_c2 = st.columns(2)
+    with col_c1:
+        if st.button("Switch", use_container_width=True):
+            st.session_state.selected_source = None
+            st.rerun()
+    with col_c2:
+        if st.button("Sign Out", use_container_width=True):
+            st.session_state.logged_in = False
+            st.session_state.selected_source = None
+            st.rerun()
+
 st.markdown("---")
-st.subheader("🤖 Gen AI Security Intelligence")
 
-if st.session_state.run_analysis:
-    if st.session_state.analysis_result is None:
-        with st.spinner("Gemini sedang menganalisis pola data (Holistic Audit)..."):
-            # Panggil fungsi analisis dari core/llm_analyzer.py
-            st.session_state.analysis_result = analyze_security(cleaned_data)
+# --- LOADING AND DASHBOARD RENDERING ---
+
+if st.session_state.selected_source == 'google_sheets':
+    # --- MODUL A: GOOGLE SHEETS (ACADEMIC FOCUS) ---
+    st.markdown('<h1 class="apple-hero-display">Academic Performance & Grades</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="apple-tagline">Analisis rata-rata nilai, sebaran grade, dan ketuntasan remidi siswa.</p>', unsafe_allow_html=True)
+
+    with st.spinner("Sinkronisasi data Google Sheets..."):
+        try:
+            raw_data = load_all_data()
+            cleaned_data = clean_all_data(raw_data)
+            quality_report = get_data_quality_report(cleaned_data)
+        except Exception as e:
+            st.error(f"Gagal memuat API Google Sheets: {str(e)}")
+            st.stop()
+
+    # Metrics
+    c1, c2, c3 = st.columns(3)
+    total_siswa = len(cleaned_data.get("DATA_SISWA", []))
+    c1.metric("Total Siswa", f"{total_siswa}")
+    c2.metric("Siswa Remidi", "305") # Statis dari docs/dashboard_context.md
+    c3.metric("Rata-rata Nilai (Final)", "71.60")
+
+    st.markdown("### 📊 Distribusi & Analisis Nilai")
     
-    col_analysis, col_rec = st.columns([2, 1])
-    with col_analysis:
-        st.markdown(st.session_state.analysis_result)
-    
-    with col_rec:
-        st.subheader("💡 Rekomendasi")
-        recs = generate_security_recommendations(st.session_state.analysis_result)
-        for i, r in enumerate(recs, 1):
-            st.markdown(f'**{i}.** {r}')
+    col_graph1, col_graph2 = st.columns(2)
+    with col_graph1:
+        if "DATA_NILAI" in cleaned_data:
+            fig_scores = create_score_distribution(cleaned_data["DATA_NILAI"])
+            st.plotly_chart(fig_scores, use_container_width=True)
+    with col_graph2:
+        # Tampilkan sebaran kualitatif grade dari prd
+        st.markdown("""
+        **Sebaran Grade Nilai Gabungan:**
+        *   **26.7%** - Grade E (50-59)
+        *   **23.3%** - Grade F (Below 50)
+        *   **16.0%** - Grade B (80-89)
+        *   **13.5%** - Grade C (70-79)
+        *   **10.2%** - Grade A (90-100)
+        *   **10.0%** - Grade D (60-69)
+        """)
+
+    # AI Section
+    st.markdown("---")
+    if st.button("🤖 Run Academic AI Analysis", type="primary"):
+        st.session_state.run_analysis = True
+
+    if st.session_state.run_analysis:
+        with st.spinner("Gemini sedang menganalisis performa akademik..."):
+            st.session_state.analysis_result = analyze_security(cleaned_data, "google_sheets")
+        
+        st.markdown(f'<div class="apple-ai-panel"><h3>💡 AI Academic Recommendations</h3>{st.session_state.analysis_result}</div>', unsafe_allow_html=True)
+
 else:
-    st.info("Klik tombol 'Run AI Analysis' di atas untuk memulai audit keamanan berbasis AI. Ini membantu menghemat penggunaan token API.")
+    # --- MODUL B: MARIADB DATABASE (STUDENT RELATIONS FOCUS) ---
+    st.markdown('<h1 class="apple-hero-display">Student Profiles & Operational Relations</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="apple-tagline">Log relasi program siswa, catatan kualitatif rombel, dan log remidi database.</p>', unsafe_allow_html=True)
+
+    with st.spinner("Sinkronisasi database MariaDB (Port 3077)..."):
+        db_data = load_mariadb_data()
+
+    # Metrics
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Siswa Terdaftar (DB)", f"{len(db_data['siswa'])}")
+    c2.metric("Rombel Aktif", "16 Rombel")
+    
+    # Calculate cases count based on catatan_siswa
+    obs_count = 0
+    if not db_data['catatan_siswa'].empty:
+        obs_count = len(db_data['catatan_siswa'][db_data['catatan_siswa']['status_followup']=='NEED FURTHER OBSERVATION'])
+    c3.metric("Kasus Observasi Aktif", f"{obs_count}")
+
+    st.markdown("### 🗂️ Profil Siswa & Catatan Kelas")
+    col_db1, col_db2 = st.columns([2, 1])
+    
+    with col_db1:
+        st.subheader("Daftar Siswa & Rombel (Direct Access)")
+        st.dataframe(db_data['jadwal_siswa'], use_container_width=True)
+
+    with col_db2:
+        st.subheader("Log Kasus Observasi Staf")
+        if db_data['catatan_siswa'].empty:
+            st.write("Tidak ada log catatan siswa.")
+        else:
+            for idx, row in db_data['catatan_siswa'].iterrows():
+                badge = "🔴 Observasi" if row['status_followup'] == 'NEED FURTHER OBSERVATION' else "🟢 Selesai"
+                st.markdown(f"**Siswa ID {row['id_siswa']}** ({badge}):\n* {row['catatan']}")
+
+    # AI Section
+    st.markdown("---")
+    if st.button("🤖 Run Database Operations AI Audit", type="primary"):
+        st.session_state.run_analysis = True
+
+    if st.session_state.run_analysis:
+        with st.spinner("Gemini sedang melakukan audit operasional database..."):
+            st.session_state.analysis_result = analyze_security(db_data, "mariadb")
+        
+        st.markdown(f'<div class="apple-ai-panel"><h3>💡 AI Operations Audit Recommendations</h3>{st.session_state.analysis_result}</div>', unsafe_allow_html=True)
 
 # --- FOOTER ---
-st.caption(f"EduDecision AI v1.0 | Last Sync: {datetime.now().strftime('%H:%M:%S')}")
+st.caption(f"EduDecision AI v2.0 | Last Sync: {datetime.now().strftime('%H:%M:%S')}")
