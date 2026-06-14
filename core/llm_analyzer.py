@@ -3,7 +3,8 @@ LLM Security Analyzer for LEAP Dashboard.
 Optimized with Explicit Failover List for Gemini & Gemma models.
 """
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import os
 import pandas as pd
 import streamlit as st
@@ -40,19 +41,19 @@ Data Input:
 """
 
 def get_operations_prompt(dataframes: dict) -> str:
-    """Generate prompt template for MariaDB (Operations focus)."""
-    combined = "=== AUDIT OPERASIONAL & PROFILE SISWA (MARIADB) ===\n"
-    for name in ["siswa", "kursus_siswa", "jadwal_siswa", "catatan_siswa", "catatan_remidi_siswa"]:
+    """Generate prompt template for SQL Database (Website Statistics focus)."""
+    combined = "=== AUDIT STATISTIK & TRAFIK WEBSITE (DATABASE SQL) ===\n"
+    for name in ["web_statistik"]:
         df = dataframes.get(name)
         if df is not None and not df.empty:
-            combined += f"\n[TABEL: {name}]\n{df.head(40).to_string(index=False)}\n"
+            combined += f"\n[TABEL: {name}]\n{df.head(100).to_string(index=False)}\n"
             
-    return f"""Kamu adalah Database Operations Auditor untuk LKP LEAP.
-Tugasmu mengaudit konsistensi status keaktifan siswa, log kasus observasi, dan riwayat perbaikan remidi pada database operasional.
+    return f"""Kamu adalah SQL Database Website Traffic Auditor untuk LKP LEAP.
+Tugasmu menganalisis log statistik pengunjung website untuk mendeteksi tren trafik, pola akses, dan potensi anomali/keamanan akses demi kenyamanan belajar online SISWA.
 Fokus Analisis:
-1. Temukan siswa yang terjebak pada status 'NEED FURTHER OBSERVATION' yang belum selesai ditangani.
-2. Periksa inkonsistensi data (misal siswa non-aktif tapi masih terdaftar tuntas di kelas berjalan).
-3. Berikan saran tindak lanjut administratif untuk penyelesaian kasus siswa.
+1. Analisis tren trafik: Hitung total views, unique IPs, dan rata-rata page views per sesi.
+2. Deteksi Anomali Keamanan: Temukan apakah ada IP Address yang melakukan akses berlebihan (high page views) dalam satu sesi (potensi bot/scraping).
+3. Berikan rekomendasi operasional dan keamanan website untuk meningkatkan performa server dan keamanan akses website LKP LEAP.
 
 Data Input:
 {combined}
@@ -67,7 +68,7 @@ def analyze_security(dataframes: dict, source_type: str = "google_sheets") -> st
     if not api_key:
         return "ERROR: API Key tidak ditemukan."
     
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
     # --- LIST MODEL SESUAI CONTOH HANS ---
     # Aku tambahkan prefix 'models/' supaya API-nya bisa mengenali dengan tepat
@@ -96,12 +97,13 @@ def analyze_security(dataframes: dict, source_type: str = "google_sheets") -> st
     for model_name in models_to_try:
         try:
             logger.info(f"Mencoba audit {source_type} dengan: {model_name}")
-            model = genai.GenerativeModel(
-                model_name=model_name,
-                system_instruction=sys_instruction
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=sys_instruction
+                )
             )
-            
-            response = model.generate_content(prompt)
             # Sukses! Langsung kembalikan hasilnya
             return f"**System Intelligence: {model_name}**\n\n{response.text.strip()}"
             
@@ -121,10 +123,65 @@ def analyze_security(dataframes: dict, source_type: str = "google_sheets") -> st
 def generate_security_recommendations(analysis_result: str) -> list:
     """Generate rekomendasi mitigasi menggunakan model fallback tercepat."""
     try:
+        api_key = get_api_key()
+        client = genai.Client(api_key=api_key)
         # Gunakan flash-lite untuk kecepatan generate rekomendasi
-        model = genai.GenerativeModel("models/gemini-flash-lite-latest")
-        prompt = f"Berdasarkan analisis ini: {analysis_result}\nBerikan 5 poin rekomendasi mitigasi keamanan (bullet points)."
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="models/gemini-2.5-flash-lite",
+            contents=f"Berdasarkan analisis ini: {analysis_result}\nBerikan 5 poin rekomendasi mitigasi keamanan (bullet points)."
+        )
         return [line.strip("- *• ") for line in response.text.strip().split('\n') if len(line) > 10][:5]
     except:
         return ["Rekomendasi tidak dapat dimuat karena limitasi API."]
+
+def analyze_student_profile(student_name: str, student_info: dict) -> str:
+    """Generate custom academic and behavioral advice for a specific student using Gemini AI."""
+    api_key = get_api_key()
+    if not api_key:
+        return "ERROR: API Key tidak ditemukan."
+    
+    client = genai.Client(api_key=api_key)
+    
+    # Prioritas model untuk kecepatan dan kestabilan
+    models_to_try = [
+        'models/gemini-3.1-flash-lite-preview',
+        'models/gemini-2.5-flash-lite',
+        'models/gemini-2.0-flash-lite',
+        'models/gemini-flash-latest'
+    ]
+    
+    info_str = f"=== PROFIL SISWA: {student_name} ===\n"
+    for key, val in student_info.items():
+        if isinstance(val, pd.DataFrame):
+            info_str += f"\n[{key}]\n{val.to_string(index=False)}\n"
+        else:
+            info_str += f"\n[{key}]: {val}\n"
+            
+    prompt = f"""Kamu adalah Educational Consultant & AI DSS Expert untuk LKP LEAP Surabaya.
+Tugasmu adalah menganalisis data akademik (kehadiran, nilai) dan data operasional (observasi staf, program remedial) untuk siswa bernama '{student_name}'.
+
+Berikan laporan evaluasi terpadu yang memuat:
+1. **Analisis Akademik & Partisipasi**: Evaluasi tingkat kehadiran siswa dan performa nilainya. Apakah ada masalah ketidakhadiran yang berdampak pada pencapaian akademik?
+2. **Kondisi Observasi & Sikap**: Tinjau catatan observasi guru (jika ada) dan hubungkan dengan performa belajarnya.
+3. **Rencana Mitigasi Remedial Konkret**: Buat rencana pembelajaran adaptif dan mitigasi remedi spesifik agar siswa ini bisa lulus kelas dengan baik.
+4. **Saran Retensi (Operasional)**: Jika ada risiko keluar (churn) atau masalah jadwal, berikan rekomendasi administratif untuk staf operasional LKP LEAP.
+
+Data Siswa:
+{info_str}
+"""
+    
+    for model_name in models_to_try:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction="Kamu adalah Konsultan Pendidikan AI LKP LEAP."
+                )
+            )
+            return f"**System Intelligence: {model_name}**\n\n{response.text.strip()}"
+        except Exception as e:
+            logger.warning(f"Gagal generate analisis siswa dengan model {model_name}: {str(e)}")
+            continue
+            
+    return "ERROR: Gagal menghasilkan analisis siswa menggunakan Gemini API."

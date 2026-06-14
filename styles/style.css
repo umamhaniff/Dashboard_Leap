@@ -1,95 +1,639 @@
-/* --- Apple Typography & Base Canvas --- */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap');
+/* --- Genesis Typography & Base Canvas --- */
+@import url('https://api.fontshare.com/v2/css?f[]=general-sans@600,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap');
 
-html, body, [data-testid="stAppViewContainer"] {
-  font-family: 'Outfit', -apple-system, system-ui, sans-serif !important;
-  background-color: #f5f5f7 !important; /* Canvas Parchment */
-  color: #1d1d1f !important; /* Near-black Ink */
+/* --- Futuristic Theme Variables --- */
+:root {
+  --primary-color: #6366F1 !important; /* Force Streamlit widgets to use Genesis Indigo */
+  
+  --genesis-primary: #6366F1;
+  --genesis-primary-hover: #4F46E5;
+  --genesis-accent-cyan: #06B6D4;
+  --genesis-dot-color: rgba(99, 102, 241, 0.08);
 }
 
-/* --- Navigation Bars --- */
-.apple-global-nav {
-  background-color: #000000;
-  color: #ffffff;
-  padding: 10px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-  letter-spacing: -0.12px;
-  margin-top: -60px;
-  margin-bottom: 20px;
+@media (prefers-color-scheme: dark) {
+  :root {
+    --genesis-dot-color: rgba(99, 102, 241, 0.05);
+  }
 }
 
-.apple-sub-nav {
-  background-color: rgba(245, 245, 247, 0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid #e0e0e0;
-  padding: 12px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
+.stApp, 
+[data-testid="stAppViewContainer"], 
+[data-testid="stAppViewBlockContainer"],
+[data-testid="stMainViewContainer"],
+[data-testid="stHeader"] {
+  font-family: 'DM Sans', -apple-system, system-ui, sans-serif !important;
 }
 
-/* --- Hero Displays --- */
-.apple-hero-display {
-  font-family: 'Outfit', sans-serif;
-  font-size: 44px !important;
-  font-weight: 600 !important;
-  line-height: 1.1;
-  letter-spacing: -0.374px !important;
-  color: #1d1d1f !important;
-  margin-bottom: 5px;
+/* --- Genesis Signature Futuristic Dot Grid Background & Top Ambient Glow --- */
+.stApp {
+  background-image: radial-gradient(var(--genesis-dot-color) 1.5px, transparent 1.5px) !important;
+  background-size: 24px 24px !important;
+  background-attachment: fixed !important;
+  position: relative !important;
 }
 
-.apple-tagline {
-  font-size: 19px !important;
-  color: #7a7a7a !important;
-  margin-bottom: 35px;
+.stApp::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 450px !important;
+  background: radial-gradient(circle at 80% 0%, rgba(99, 102, 241, 0.08), transparent 60%),
+              radial-gradient(circle at 20% 0%, rgba(6, 182, 212, 0.08), transparent 60%) !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
 }
 
-/* --- Card Styles --- */
+/* --- Container Width (Mobile First Design) --- */
+.block-container {
+  max-width: 100% !important; /* Full width on mobile */
+  padding: 16px 12px !important;
+}
+
+@media (min-width: 768px) {
+  .block-container {
+    padding: 32px 24px !important;
+  }
+}
+
+@media (min-width: 1200px) {
+  .block-container {
+    padding: 40px 48px !important; /* Spreads out fully on desktop */
+  }
+}
+
+/* --- Genesis Futuristic Display & Headings --- */
+h1, h2, h3, h4, h5, h6, 
+[data-testid="stMarkdownContainer"] h1, 
+[data-testid="stMarkdownContainer"] h2, 
+[data-testid="stMarkdownContainer"] h3 {
+  font-family: 'General Sans', sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--text-color) !important;
+  margin-top: 1em !important;
+  margin-bottom: 0.5em !important;
+}
+
+.genesis-hero-display {
+  font-family: 'General Sans', sans-serif !important;
+  font-size: 32px !important; /* Mobile first default */
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--text-color) !important;
+  margin-top: 16px !important;
+  margin-bottom: 8px !important;
+}
+
+.genesis-tagline {
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 14px !important;
+  color: var(--text-color) !important;
+  opacity: 0.75 !important;
+  margin-bottom: 24px !important;
+}
+
+@media (min-width: 768px) {
+  .genesis-hero-display {
+    font-size: 48px !important;
+    letter-spacing: -0.035em !important;
+    margin-top: 24px !important;
+  }
+  .genesis-tagline {
+    font-size: 15px !important;
+    margin-bottom: 32px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .genesis-hero-display {
+    font-size: 56px !important;
+    letter-spacing: -0.04em !important;
+  }
+}
+
+/* --- Futuristic Glassmorphic Cards & Panels --- */
+.genesis-futuristic-card {
+  background-color: var(--secondary-background-color) !important;
+  border: 1px solid var(--genesis-border, rgba(0,0,0,0.1)) !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+  text-align: left !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  margin-bottom: 20px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.01) !important;
+}
+
+.genesis-futuristic-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--genesis-primary);
+  opacity: 0.8;
+}
+
+.genesis-futuristic-card:hover {
+  transform: translateY(-4px) !important;
+  border-color: var(--genesis-primary) !important;
+  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.15) !important; /* Glowing shadow */
+}
+
+/* --- Form-based Login Card (Genesis Form Card) --- */
+form[data-testid="stForm"] {
+  background-color: var(--secondary-background-color) !important;
+  border: 1px solid var(--genesis-border, rgba(99, 102, 241, 0.12)) !important;
+  border-radius: 12px !important;
+  padding: 32px 24px !important;
+  max-width: 440px !important;
+  margin: 40px auto 0 auto !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.03) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  text-align: center !important;
+}
+
+form[data-testid="stForm"]::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 4px !important;
+  background: linear-gradient(90deg, var(--genesis-primary), var(--genesis-accent-cyan)) !important;
+}
+
+/* Center all inputs and elements inside the form */
+form[data-testid="stForm"] input {
+  text-align: center !important;
+  max-width: 100% !important;
+}
+
+/* Premium Form Submit Button styling */
+form[data-testid="stForm"] button {
+  background-color: var(--genesis-primary) !important;
+  color: #FFFFFF !important;
+  border: 1px solid var(--genesis-primary) !important;
+  border-radius: 6px !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  padding: 8px 18px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  width: 100% !important;
+  cursor: pointer !important;
+}
+
+form[data-testid="stForm"] button:hover {
+  background-color: var(--genesis-primary-hover) !important;
+  border-color: var(--genesis-primary-hover) !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35) !important;
+  transform: translateY(-1px) !important;
+}
+
+form[data-testid="stForm"] button:active {
+  transform: translateY(1px) !important;
+}
+
+@media (min-width: 768px) {
+  form[data-testid="stForm"] {
+    padding: 40px 32px !important;
+    margin: 80px auto 0 auto !important;
+  }
+}
+
+/* --- Card Styles (Genesis Metric Cards) --- */
 div[data-testid="stMetricValue"] {
-  font-size: 34px !important;
-  font-weight: 600 !important;
-  color: #1d1d1f !important;
+  font-family: 'General Sans', sans-serif !important;
+  font-size: 24px !important; /* Mobile size */
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--text-color) !important;
+}
+
+@media (min-width: 768px) {
+  div[data-testid="stMetricValue"] {
+    font-size: 32px !important; /* Scale up */
+  }
+}
+
+div[data-testid="stMetricLabel"] > div {
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--text-color) !important;
+  opacity: 0.7 !important;
 }
 
 div[data-testid="metric-container"] {
-  background-color: #ffffff !important;
-  border: 1px solid #e0e0e0 !important;
-  border-radius: 18px !important; /* rounded.lg */
-  padding: 18px !important;
-  box-shadow: none !important; /* No shadow */
+  background-color: var(--secondary-background-color) !important;
+  border: 1px solid var(--genesis-border, rgba(0,0,0,0.1)) !important;
+  border-left: 4px solid var(--genesis-primary) !important;
+  border-radius: 12px !important;
+  padding: 16px 20px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.01) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* --- AI recommendations (Resting Shadow) --- */
-.apple-ai-panel {
-  background-color: #1d1d1f !important;
-  color: #ffffff !important;
-  border-radius: 18px !important;
-  padding: 24px;
-  box-shadow: rgba(0, 0, 0, 0.22) 3px 5px 30px 0 !important; /* Single Shadow */
-  margin-top: 20px;
+div[data-testid="metric-container"]:hover {
+  border-color: var(--genesis-primary) !important;
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.12) !important;
+  transform: translateY(-2px) !important;
 }
 
-.apple-ai-panel h3 {
-  color: #2997ff !important;
-  font-weight: 600;
+/* --- AI Recommendations Panel (Genesis AI Panel) --- */
+.genesis-ai-panel {
+  background-color: var(--secondary-background-color) !important;
+  color: var(--text-color) !important;
+  border: 1px solid var(--genesis-border, rgba(0,0,0,0.1)) !important;
+  border-radius: 8px !important;
+  padding: 24px !important;
+  box-shadow: none !important;
+  margin-top: 24px !important;
+  margin-bottom: 24px !important;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease !important;
+}
+
+.genesis-ai-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--genesis-primary), var(--genesis-accent-cyan));
+}
+
+.genesis-ai-panel:hover {
+  box-shadow: 0 8px 30px rgba(0,0,0,0.04) !important;
+}
+
+.genesis-ai-panel h3 {
+  font-family: 'General Sans', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 20px !important;
+  letter-spacing: -0.03em !important;
+  color: #6366F1 !important;
+  margin-top: 0 !important;
+  margin-bottom: 16px !important;
+}
+
+@media (min-width: 768px) {
+  .genesis-ai-panel h3 {
+    font-size: 24px !important;
+  }
 }
 
 /* --- Buttons --- */
 button[kind="primary"] {
-  background-color: #0066cc !important; /* Action Blue */
-  color: white !important;
-  border-radius: 9999px !important; /* rounded.pill */
-  border: none !important;
+  background-color: var(--genesis-primary) !important;
+  color: #FFFFFF !important;
+  border: 1px solid var(--genesis-primary) !important;
+  border-radius: 6px !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
   padding: 8px 18px !important;
-  transition: transform 0.1s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+}
+
+button[kind="primary"]:hover {
+  background-color: var(--genesis-primary-hover) !important;
+  border-color: var(--genesis-primary-hover) !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35) !important;
+  transform: translateY(-1px) !important;
 }
 
 button[kind="primary"]:active {
-  transform: scale(0.95); /* scale micro-interaction */
+  transform: translateY(1px) !important;
+}
+
+button[kind="secondary"], .stButton > button:not([kind="primary"]) {
+  background-color: transparent !important;
+  color: var(--text-color) !important;
+  border: 1px solid var(--genesis-border, rgba(0,0,0,0.1)) !important;
+  border-radius: 6px !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  padding: 8px 18px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+}
+
+button[kind="secondary"]:hover, .stButton > button:not([kind="primary"]):hover {
+  background-color: var(--secondary-background-color) !important;
+  border-color: var(--text-color) !important;
+  transform: translateY(-1px) !important;
+}
+
+button[kind="secondary"]:active, .stButton > button:not([kind="primary"]):active {
+  transform: translateY(1px) !important;
+}
+
+/* --- Inputs & Textareas --- */
+div[data-baseweb="input"], div[data-baseweb="textarea"] {
+  border-radius: 6px !important;
+  border: 1px solid var(--genesis-border, rgba(0,0,0,0.1)) !important;
+  background-color: var(--secondary-background-color) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+div[data-baseweb="input"] input, div[data-baseweb="textarea"] textarea {
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 14px !important;
+  padding: 10px 14px !important;
+  color: var(--text-color) !important;
+}
+
+div[data-baseweb="input"]:focus-within, div[data-baseweb="textarea"]:focus-within {
+  border-color: var(--genesis-primary) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12) !important;
+}
+
+/* --- Table & Dataframe overrides --- */
+.stDataFrame, div[data-testid="stTable"] {
+  border: 1px solid var(--genesis-border, rgba(0,0,0,0.1)) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.01) !important;
+}
+
+table {
+  border-collapse: collapse !important;
+  width: 100% !important;
+  background-color: var(--secondary-background-color) !important;
+}
+
+th {
+  font-family: 'DM Sans', sans-serif !important;
+  font-weight: 700 !important;
+  color: var(--genesis-primary) !important;
+  background-color: rgba(99, 102, 241, 0.04) !important;
+  border-bottom: 2px solid var(--genesis-primary) !important;
+  padding: 12px 16px !important;
+  text-align: left !important;
+}
+
+/* --- Streamlit Plotly Chart Customization --- */
+.stPlotlyChart {
+  background-color: var(--secondary-background-color) !important;
+  border: 1px solid var(--genesis-border, rgba(99, 102, 241, 0.08)) !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01) !important;
+  transition: all 0.3s ease !important;
+  margin-bottom: 20px !important;
+}
+
+.stPlotlyChart:hover {
+  border-color: rgba(99, 102, 241, 0.2) !important;
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.08) !important;
+  transform: translateY(-2px) !important;
+}
+
+td {
+  font-family: 'DM Sans', sans-serif !important;
+  color: var(--text-color) !important;
+  border-bottom: 1px solid var(--genesis-border, rgba(0,0,0,0.1)) !important;
+  padding: 12px 16px !important;
+  transition: background-color 0.2s !important;
+}
+
+tr:hover td {
+  background-color: var(--background-color) !important;
+}
+
+/* --- Chips & Badges --- */
+.genesis-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background-color: var(--secondary-background-color);
+  border: 1px solid var(--genesis-border, rgba(0,0,0,0.1));
+  color: var(--text-color);
+  opacity: 0.8;
+  padding: 4px 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+
+.genesis-chip.active {
+  background-color: var(--genesis-primary);
+  color: #FFFFFF;
+  opacity: 1;
+}
+
+.genesis-chip.success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10B981;
+}
+
+.genesis-chip.warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #F59E0B;
+}
+
+.genesis-chip.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+}
+
+/* --- Sidebar Styling --- */
+[data-testid="stSidebar"] {
+  background-color: var(--secondary-background-color) !important;
+  border-right: 1px solid var(--genesis-border, rgba(0,0,0,0.1)) !important;
+}
+
+/* --- Premium Futuristic Sync Dashboard on Login --- */
+.genesis-sync-wrapper {
+  background: rgba(99, 102, 241, 0.02) !important;
+  border: 1px solid var(--genesis-border, rgba(99, 102, 241, 0.12)) !important;
+  border-radius: 14px !important;
+  padding: 18px !important;
+  margin-bottom: 24px !important;
+  text-align: left !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+.genesis-sync-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 12px !important;
+}
+
+.genesis-sync-title {
+  font-family: 'General Sans', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  color: var(--text-color) !important;
+  opacity: 0.6 !important;
+  text-transform: uppercase !important;
+}
+
+.genesis-sync-percentage {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #10B981 !important;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
+}
+
+.genesis-sync-percentage.partial {
+  color: #F59E0B !important;
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
+}
+
+.genesis-sync-percentage.disconnected {
+  color: #EF4444 !important;
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.3) !important;
+}
+
+.genesis-sync-progress-track {
+  width: 100% !important;
+  height: 6px !important;
+  background-color: rgba(99, 102, 241, 0.08) !important;
+  border-radius: 9999px !important;
+  margin-bottom: 18px !important;
+  overflow: hidden !important;
+}
+
+.genesis-sync-progress-bar {
+  height: 100% !important;
+  background: linear-gradient(90deg, #6366F1, #10B981) !important;
+  border-radius: 9999px !important;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.genesis-sync-progress-bar.partial {
+  background: linear-gradient(90deg, #6366F1, #F59E0B) !important;
+}
+
+.genesis-sync-progress-bar.disconnected {
+  background: #EF4444 !important;
+}
+
+.genesis-sync-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px !important;
+}
+
+.genesis-sync-card {
+  background: var(--secondary-background-color) !important;
+  border: 1px solid var(--genesis-border, rgba(0, 0, 0, 0.06)) !important;
+  border-radius: 10px !important;
+  padding: 12px !important;
+  transition: all 0.3s ease !important;
+  position: relative !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.01) !important;
+}
+
+.genesis-sync-card.connected {
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+.genesis-sync-card.disconnected {
+  border-color: rgba(239, 68, 68, 0.2) !important;
+}
+
+.genesis-sync-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.06) !important;
+}
+
+.genesis-sync-card.connected:hover {
+  border-color: #10B981 !important;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.12) !important;
+}
+
+.genesis-sync-card.disconnected:hover {
+  border-color: #EF4444 !important;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.12) !important;
+}
+
+.genesis-sync-card-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 8px !important;
+}
+
+.genesis-sync-card-icon {
+  font-size: 16px !important;
+}
+
+.genesis-sync-card-status-badge {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  text-transform: uppercase !important;
+}
+
+.genesis-sync-card-status-badge.connected {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  color: #10B981 !important;
+}
+
+.genesis-sync-card-status-badge.disconnected {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  color: #EF4444 !important;
+}
+
+.genesis-sync-card-title {
+  font-family: 'General Sans', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  color: var(--text-color) !important;
+  margin-bottom: 2px !important;
+}
+
+.genesis-sync-card-desc {
+  font-size: 10px !important;
+  color: var(--text-color) !important;
+  opacity: 0.5 !important;
+  margin-bottom: 8px !important;
+}
+
+.genesis-sync-card-meta {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 9px !important;
+  font-weight: 600 !important;
+  color: var(--text-color) !important;
+  opacity: 0.7 !important;
+  border-top: 1px solid var(--genesis-border, rgba(0, 0, 0, 0.05)) !important;
+  padding-top: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.genesis-sync-card-meta.connected {
+  color: #10B981 !important;
+}
+
+.genesis-sync-card-meta.disconnected {
+  color: #EF4444 !important;
 }
