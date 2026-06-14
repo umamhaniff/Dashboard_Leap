@@ -5,16 +5,16 @@ Dokumen ini memuat konteks persisten dan perintah CLI khusus untuk memandu agen 
 ---
 
 ## 📋 Proyek & Arsitektur Utama
-EduDecision AI V2 adalah sistem pendukung keputusan hibrida (*Hybrid DSS*) berbasis **Streamlit** dengan estetika visual **Apple Web Design**. Sistem ini memiliki dual-input dan dual-output terisolasi:
+EduDecision AI V2 adalah sistem pendukung keputusan hibrida (*Hybrid DSS*) berbasis **Streamlit** dengan estetika visual **Genesis Design** (sesuai docs/genesis-DESIGN.md). Sistem ini memiliki dual-input dan dual-output terisolasi:
 
-1.  **Google Sheets (Akademik & Rapor)**:
-    *   **Fokus**: *Academic Performance & Grades*.
+1.  **Google Sheets (Absensi & Nilai)**:
+    *   **Fokus**: *Attendance & Grades*.
     *   **Data**: `DATA_SISWA`, `DATA_ABSENSI`, `DATA_NILAI`, `DATA_KELUAR`, `DATA_OVERVIEW`.
-    *   **AI Engine**: Rekomendasi ketuntasan belajar & analisis remedi (Gemini Academic Engine).
-2.  **MariaDB Port 3077 (Profil & Hubungan Siswa)**:
-    *   **Fokus**: *Student Profiles & Operational Relations*.
-    *   **Data**: `siswa`, `kursus_siswa`, `jadwal_siswa`, `catatan_siswa` (observasi), `catatan_remidi_siswa`.
-    *   **AI Engine**: Audit integritas data siswa, pemantauan kasus observasi staf, dan log remidi (Gemini Operations Engine).
+    *   **AI Engine**: Rekomendasi kehadiran & analisis nilai (Gemini Academic Engine).
+2.  **Database SQL (Statistik Website)**:
+    *   **Fokus**: *Website Analytics & Traffic Logs*.
+    *   **Data**: `web_statistik`.
+    *   **AI Engine**: Audit trafik website, deteksi anomali akses, dan log performa (Gemini Operations Engine).
 
 ---
 

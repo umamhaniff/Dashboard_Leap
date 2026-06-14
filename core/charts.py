@@ -9,6 +9,52 @@ import pandas as pd
 import numpy as np
 from typing import Optional, List, Dict, Any
 
+def apply_genesis_theme(fig: go.Figure, title_text: str, xaxis_title: Optional[str] = None, yaxis_title: Optional[str] = None) -> go.Figure:
+    """Applies a premium, colorful, and glassmorphic Genesis theme to any Plotly figure."""
+    fig.update_layout(
+        title=dict(
+            text=f"<b>{title_text}</b>",
+            font=dict(
+                family="General Sans, sans-serif",
+                size=18,
+                color="var(--text-color)"
+            ),
+            x=0.02,
+            y=0.95
+        ),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(
+            family="DM Sans, sans-serif",
+            color="var(--text-color)"
+        ),
+        xaxis=dict(
+            title=xaxis_title,
+            gridcolor="var(--genesis-border, rgba(99, 102, 241, 0.08))",
+            linecolor="var(--genesis-border, rgba(99, 102, 241, 0.12))",
+            zerolinecolor="var(--genesis-border, rgba(99, 102, 241, 0.12))",
+            title_font=dict(size=12, color="var(--text-color)", family="DM Sans"),
+            tickfont=dict(size=10, color="var(--text-color)")
+        ),
+        yaxis=dict(
+            title=yaxis_title,
+            gridcolor="var(--genesis-border, rgba(99, 102, 241, 0.08))",
+            linecolor="var(--genesis-border, rgba(99, 102, 241, 0.12))",
+            zerolinecolor="var(--genesis-border, rgba(99, 102, 241, 0.12))",
+            title_font=dict(size=12, color="var(--text-color)", family="DM Sans"),
+            tickfont=dict(size=10, color="var(--text-color)")
+        ),
+        margin=dict(l=40, r=20, t=60, b=40),
+        legend=dict(
+            bgcolor="rgba(0,0,0,0)",
+            bordercolor="var(--genesis-border, rgba(99, 102, 241, 0.12))",
+            borderwidth=1,
+            font=dict(size=10, color="var(--text-color)")
+        ),
+        colorway=["#6366F1", "#06B6D4", "#10B981", "#F59E0B", "#EC4899", "#8B5CF6"]
+    )
+    return fig
+
 def create_attendance_chart(df: pd.DataFrame) -> go.Figure:
     """Create an interactive attendance visualization."""
     if 'nama' not in df.columns or 'hadir' not in df.columns:
@@ -25,6 +71,19 @@ def create_attendance_chart(df: pd.DataFrame) -> go.Figure:
     # Sort by attendance rate
     attendance_summary = attendance_summary.sort_values('attendance_rate', ascending=True)
 
+    # Dynamic colors: Red (<75), Orange (75-90), Green (90-99), Indigo (100)
+    rates = attendance_summary['attendance_rate']
+    bar_colors = []
+    for r in rates:
+        if r < 75:
+            bar_colors.append('#EF4444')
+        elif r < 90:
+            bar_colors.append('#F59E0B')
+        elif r < 100:
+            bar_colors.append('#10B981')
+        else:
+            bar_colors.append('#6366F1')
+
     # Create horizontal bar chart
     fig = go.Figure()
 
@@ -33,16 +92,17 @@ def create_attendance_chart(df: pd.DataFrame) -> go.Figure:
         y=attendance_summary['nama'],
         orientation='h',
         name='Tingkat Kehadiran (%)',
-        marker_color='lightblue',
+        marker=dict(
+            color=bar_colors,
+            line=dict(color='var(--secondary-background-color)', width=1)
+        ),
         hovertemplate='<b>%{y}</b><br>Tingkat Kehadiran: %{x:.1f}%<br>Total Pertemuan: %{customdata}<extra></extra>',
         customdata=attendance_summary['total_pertemuan']
     ))
 
+    apply_genesis_theme(fig, "Tingkat Kehadiran Siswa", "Tingkat Kehadiran (%)", "Nama Siswa")
     fig.update_layout(
-        title='Tingkat Kehadiran Siswa',
-        xaxis_title='Tingkat Kehadiran (%)',
-        yaxis_title='Nama Siswa',
-        height=max(400, len(attendance_summary) * 20),  # Dynamic height
+        height=max(400, len(attendance_summary) * 22),  # Dynamic height
         showlegend=False
     )
 
@@ -60,19 +120,29 @@ def create_score_distribution(df: pd.DataFrame) -> go.Figure:
 
     # Create histogram for each score column
     fig = go.Figure()
+    colors = ['#6366F1', '#06B6D4', '#10B981', '#F59E0B']
 
-    for col in score_cols:
+    for idx, col in enumerate(score_cols):
+        color = colors[idx % len(colors)]
         fig.add_trace(go.Histogram(
             x=df[col].dropna(),
             name=col.replace('_', ' ').title(),
-            opacity=0.7
+            opacity=0.75,
+            marker_color=color,
+            nbinsx=15,
+            hovertemplate='<b>Rentang Nilai %{x}</b><br>Frekuensi: %{y} siswa<extra></extra>'
         ))
 
+    apply_genesis_theme(fig, "Distribusi Nilai Siswa", "Nilai Rapor", "Jumlah Siswa")
     fig.update_layout(
-        title='Distribusi Nilai Siswa',
-        xaxis_title='Nilai',
-        yaxis_title='Frekuensi',
-        barmode='overlay'
+        barmode='overlay',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
     )
 
     return fig
@@ -98,30 +168,40 @@ def create_overview_metrics_chart(dataframes: dict) -> go.Figure:
     fig.add_trace(go.Bar(
         x=metrics_df['Sheet'],
         y=metrics_df['Records'],
-        name='Total Records',
-        marker_color='lightblue'
+        name='Total Baris Data',
+        marker_color='#6366F1',
+        hovertemplate='<b>Sheet: %{x}</b><br>Total Baris: %{y}<extra></extra>'
     ))
 
     # Missing values line
     fig.add_trace(go.Scatter(
         x=metrics_df['Sheet'],
         y=metrics_df['Missing Values'],
-        name='Missing Values',
+        name='Missing Values (Ketiadaan Data)',
         mode='lines+markers',
-        line=dict(color='red'),
-        yaxis='y2'
+        line=dict(color='#EF4444', width=3),
+        marker=dict(size=8, symbol='circle', borderwidth=2, bordercolor='var(--secondary-background-color)'),
+        yaxis='y2',
+        hovertemplate='<b>Sheet: %{x}</b><br>Missing Values: %{y}<extra></extra>'
     ))
 
+    apply_genesis_theme(fig, "Ikhtisar Kapasitas & Ketiadaan Data Pipeline", "Lembar Kerja (Sheets)", "Total Baris")
     fig.update_layout(
-        title='Data Overview Metrics',
-        xaxis_title='Sheet',
-        yaxis_title='Records',
         yaxis2=dict(
-            title='Missing Values',
+            title='Ketiadaan Data (Missing)',
             overlaying='y',
-            side='right'
+            side='right',
+            gridcolor="rgba(239, 68, 68, 0.05)",
+            title_font=dict(size=12, color="#EF4444", family="DM Sans"),
+            tickfont=dict(size=10, color="#EF4444")
         ),
-        showlegend=True
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
     )
 
     return fig
@@ -134,7 +214,7 @@ def create_security_alerts_chart(analysis_result: str) -> go.Figure:
     # Mock severity levels (in real implementation, extract from analysis)
     severity = np.random.choice(['Low', 'Medium', 'High'], len(alerts))
 
-    severity_colors = {'Low': 'green', 'Medium': 'orange', 'High': 'red'}
+    severity_colors = {'Low': '#10B981', 'Medium': '#F59E0B', 'High': '#EF4444'}
     colors = [severity_colors[s] for s in severity]
 
     fig = go.Figure(data=[go.Bar(
@@ -291,3 +371,46 @@ def create_dashboard_summary(dataframes: Dict[str, pd.DataFrame]) -> Dict[str, g
             )
 
     return plots
+
+def create_web_page_views_chart(db: Dict[str, pd.DataFrame]) -> go.Figure:
+    """Create a bar chart showing page views by visitor session."""
+    web_df = db.get("web_statistik", pd.DataFrame())
+    if web_df.empty or "visitor_session" not in web_df.columns:
+        fig = go.Figure()
+        fig.add_annotation(text="Data statistik web kosong", showarrow=False)
+        return fig
+        
+    fig = go.Figure(data=[go.Bar(
+        x=web_df["visitor_session"],
+        y=web_df["page_views"],
+        marker_color="#06B6D4",
+        hovertemplate='<b>Sesi: %{x}</b><br>Halaman Dilihat: %{y}<extra></extra>'
+    )])
+    
+    apply_genesis_theme(fig, "Distribusi Page Views per Sesi Pengunjung", "Sesi Pengunjung (Session)", "Page Views")
+    fig.update_layout(height=300)
+    return fig
+
+def create_web_traffic_timeline(db: Dict[str, pd.DataFrame]) -> go.Figure:
+    """Create a line/scatter chart showing web traffic timeline."""
+    web_df = db.get("web_statistik", pd.DataFrame())
+    if web_df.empty or "created_at" not in web_df.columns:
+        fig = go.Figure()
+        fig.add_annotation(text="Data timeline web kosong", showarrow=False)
+        return fig
+        
+    # Sort by created_at
+    web_df = web_df.sort_values("created_at")
+    
+    fig = go.Figure(data=[go.Scatter(
+        x=web_df["created_at"],
+        y=web_df["page_views"],
+        mode="lines+markers",
+        line=dict(color="#6366F1", width=3),
+        marker=dict(size=8, color="#06B6D4"),
+        hovertemplate='<b>Waktu: %{x}</b><br>Views: %{y}<extra></extra>'
+    )])
+    
+    apply_genesis_theme(fig, "Tren Aktivitas Trafik Website", "Tanggal & Waktu", "Page Views")
+    fig.update_layout(height=300)
+    return fig
