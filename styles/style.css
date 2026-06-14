@@ -32,7 +32,6 @@
   background-image: radial-gradient(var(--genesis-dot-color) 1.5px, transparent 1.5px) !important;
   background-size: 24px 24px !important;
   background-attachment: fixed !important;
-  position: relative !important;
 }
 
 .stApp::before {
