@@ -58,12 +58,21 @@ if _streamlit_secrets.get('gcp_service_account_json'):
 
 # Sheet names yang akan diakses
 SHEET_NAMES = _streamlit_secrets.get('sheet_names', [
-    'DATA_MASTER',
+    'DATA_SISWA',
     'DATA_ABSENSI',
     'DATA_NILAI',
+    'DATA_KELUAR',
     'DATA_OVERVIEW',
-    # Tambahkan sheet lainnya sesuai kebutuhan
 ])
+
+# MariaDB Connection settings
+MARIADB_CONFIG = {
+    'host': _streamlit_secrets.get('mariadb_host', 'localhost'),
+    'port': int(_streamlit_secrets.get('mariadb_port', 3077)),
+    'user': _streamlit_secrets.get('mariadb_user', 'root'),
+    'password': _streamlit_secrets.get('mariadb_password', ''),
+    'database': _streamlit_secrets.get('mariadb_database', 'dataleap_v5_migration')
+}
 
 # GCP Project ID (optional)
 PROJECT_ID = _streamlit_secrets.get('project_id', 'your-gcp-project-id')
@@ -122,7 +131,8 @@ def get_config() -> Dict[str, Any]:
         'error_patterns': ERROR_PATTERNS,
         'data_type_mappings': DATA_TYPE_MAPPINGS,
         'security_analysis': SECURITY_ANALYSIS_CONFIG,
-        'dashboard': DASHBOARD_CONFIG
+        'dashboard': DASHBOARD_CONFIG,
+        'mariadb': MARIADB_CONFIG
     }
 
 def validate_config() -> List[str]:
