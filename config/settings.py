@@ -34,6 +34,18 @@ def _get_streamlit_secrets() -> Dict[str, Any]:
             return dict(st.secrets)
     except Exception:
         pass
+        
+    # Fallback to local secrets.toml for CLI/pytest
+    try:
+        import toml
+        from pathlib import Path
+        secrets_path = Path(".streamlit/secrets.toml")
+        if secrets_path.exists():
+            with open(secrets_path, "r") as f:
+                return toml.load(f)
+    except Exception:
+        pass
+        
     return {}
 
 # Google Sheets Configuration

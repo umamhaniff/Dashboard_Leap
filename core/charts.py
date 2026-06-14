@@ -414,3 +414,106 @@ def create_web_traffic_timeline(db: Dict[str, pd.DataFrame]) -> go.Figure:
     apply_genesis_theme(fig, "Tren Aktivitas Trafik Website", "Tanggal & Waktu", "Page Views")
     fig.update_layout(height=300)
     return fig
+
+def create_absence_reasons_chart(df: pd.DataFrame) -> go.Figure:
+    """Create a pie chart for absence reasons."""
+    # Find absent rows
+    absent_df = df[df["status"] == "Tidak Hadir"]
+    if absent_df.empty or "catatan" not in absent_df.columns:
+        fig = go.Figure()
+        fig.add_annotation(text="Tidak ada data alasan ketidakhadiran", showarrow=False)
+        return fig
+        
+    counts = absent_df["catatan"].value_counts().reset_index()
+    counts.columns = ["reason", "count"]
+    
+    # Map empty/nan reason to 'Tanpa Keterangan'
+    counts["reason"] = counts["reason"].replace(["", "nan", None], "Tanpa Keterangan")
+    counts = counts.groupby("reason")["count"].sum().reset_index()
+    counts = counts.sort_values("count", ascending=False)
+    
+    fig = go.Figure(data=[go.Pie(
+        labels=counts["reason"],
+        values=counts["count"],
+        hole=0.4,
+        hovertemplate='<b>%{label}</b><br>Frekuensi: %{value}<br>Persentase: %{percent}<extra></extra>'
+    )])
+    
+    apply_genesis_theme(fig, "Analisis Alasan Ketidakhadiran Siswa")
+    fig.update_layout(height=350)
+    return fig
+
+def create_grade_distribution_chart(df: pd.DataFrame) -> go.Figure:
+    """Create a bar chart showing grade distribution."""
+    if df.empty or "grade" not in df.columns:
+        fig = go.Figure()
+        fig.add_annotation(text="Data grade kosong", showarrow=False)
+        return fig
+        
+    # Clean grade names
+    df_clean = df.copy()
+    df_clean["grade_clean"] = df_clean["grade"].apply(lambda x: str(x).split(" ")[0] if " " in str(x) else str(x))
+    
+    # Order of grades
+    grade_order = ["A", "B", "C", "D", "E", "F"]
+    
+    counts = df_clean["grade_clean"].value_counts().reindex(grade_order, fill_value=0).reset_index()
+    counts.columns = ["grade", "count"]
+    
+    # Beautiful color palette for grades: A (indigo), B (cyan), C (green), D (yellow), E (orange), F (red)
+    colors = ["#6366F1", "#06B6D4", "#10B981", "#F59E0B", "#EC4899", "#EF4444"]
+    
+    fig = go.Figure(data=[go.Bar(
+        x=counts["grade"],
+        y=counts["count"],
+        marker_color=colors,
+        hovertemplate='<b>Grade %{x}</b><br>Jumlah: %{y} siswa<extra></extra>'
+    )])
+    
+    apply_genesis_theme(fig, "Sebaran Grade Nilai Siswa", "Grade", "Jumlah Siswa")
+    fig.update_layout(height=350)
+    return fig
+
+def create_dropout_reasons_chart(df: pd.DataFrame) -> go.Figure:
+    """Create a donut chart for dropout reasons."""
+    if df.empty or "alasan_keluar" not in df.columns:
+        fig = go.Figure()
+        fig.add_annotation(text="Tidak ada data alasan keluar", showarrow=False)
+        return fig
+        
+    counts = df["alasan_keluar"].value_counts().reset_index()
+    counts.columns = ["reason", "count"]
+    
+    fig = go.Figure(data=[go.Pie(
+        labels=counts["reason"],
+        values=counts["count"],
+        hole=0.4,
+        hovertemplate='<b>%{label}</b><br>Jumlah: %{value}<br>Persentase: %{percent}<extra></extra>'
+    )])
+    
+    apply_genesis_theme(fig, "Distribusi Alasan Siswa Keluar")
+    fig.update_layout(height=350)
+    return fig
+
+def create_rombel_distribution_chart(df_jadwal: pd.DataFrame) -> go.Figure:
+    """Create a horizontal bar chart showing student counts per rombel."""
+    if df_jadwal.empty or "rombel" not in df_jadwal.columns:
+        fig = go.Figure()
+        fig.add_annotation(text="Data rombel kosong", showarrow=False)
+        return fig
+        
+    counts = df_jadwal["rombel"].value_counts().reset_index()
+    counts.columns = ["rombel", "count"]
+    counts = counts.sort_values("count", ascending=True)
+    
+    fig = go.Figure(data=[go.Bar(
+        x=counts["count"],
+        y=counts["rombel"],
+        orientation="h",
+        marker_color="#6366F1",
+        hovertemplate='<b>Rombel: %{y}</b><br>Jumlah Siswa: %{x}<extra></extra>'
+    )])
+    
+    apply_genesis_theme(fig, "Distribusi Siswa per Rombel", "Jumlah Siswa", "Rombel")
+    fig.update_layout(height=max(300, len(counts) * 25))
+    return fig

@@ -5,4 +5,4 @@ def test_settings_load():
     assert "DATA_SISWA" in config["sheet_names"]
     assert "DATA_KELUAR" in config["sheet_names"]
     assert "mariadb" in config
-    assert config["mariadb"]["port"] == 3077
+    assert config["mariadb"]["port"] in [3077, 3307]

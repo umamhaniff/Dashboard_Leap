@@ -434,6 +434,10 @@ def load_mariadb_data() -> Dict[str, pd.DataFrame]:
                 cursor.execute("SELECT * FROM web_statistik")
                 web_statistik = pd.DataFrame(cursor.fetchall())
 
+                if siswa.empty:
+                    logger.warning("Database connected but 'siswa' table is empty. Falling back to mock data engine.")
+                    return generate_mock_mariadb_data()
+
                 return {
                     "siswa": siswa,
                     "kursus_siswa": kursus_siswa,
