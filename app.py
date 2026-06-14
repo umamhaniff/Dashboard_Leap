@@ -155,8 +155,10 @@ if not st.session_state.logged_in:
         submit = st.form_submit_button("Sign In")
         
         if submit:
-            target_pass = st.secrets.get("SYSTEM_PASSWORD", "leapadmin2026")
-            if password == target_pass:
+            target_pass = st.secrets.get("SYSTEM_PASSWORD")
+            if not target_pass:
+                st.error("Konfigurasi keamanan sistem (SYSTEM_PASSWORD) belum diatur di secrets.toml!")
+            elif password == target_pass:
                 st.session_state.logged_in = True
                 st.rerun()
             else:

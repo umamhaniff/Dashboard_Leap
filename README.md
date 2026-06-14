@@ -113,10 +113,10 @@ Dashboard_Leap/
    mariadb_port = 3307
    mariadb_user = "root"
    mariadb_password = ""
-   mariadb_database = "dataleap_v5_migration"
+   mariadb_database = "dataleap"
 
    # Password Login
-   SYSTEM_PASSWORD = "leapadmin2026"
+   SYSTEM_PASSWORD = "1234567"
 
    # GCP Service Account
    [gcp_service_account_json]
