@@ -1,280 +1,166 @@
-# 🛡️ LEAP Security Dashboard
+# 🛡️ EduDecision AI V2 - LKP LEAP Surabaya
 
-## Overview
+**EduDecision AI V2** adalah sistem pendukung keputusan hibrida (*Hybrid Decision Support System - DSS*) berbasis **Streamlit** yang dirancang untuk LKP LEAP Surabaya. Sistem ini memadukan data akademis dari Google Sheets dengan data operasional dari database SQL (MariaDB) untuk menghasilkan analisis taktis dan rekomendasi yang dipandu oleh kecerdasan buatan (**Google Gemini AI**).
 
-LEAP Security Dashboard adalah sistem analisis keamanan data interaktif untuk LKP LEAP yang mengintegrasikan Google Sheets sebagai sumber data utama dengan AI-powered insights menggunakan Google Gemini. Dashboard ini dirancang khusus untuk memantau keamanan data siswa, analisis absensi, dan deteksi anomali menggunakan kecerdasan buatan.
-
-## ✨ Features
-
-### 🔒 Security Analysis
-
-- **AI-Powered Analysis**: Analisis keamanan menggunakan Google Gemini AI
-- **Anomaly Detection**: Deteksi pola mencurigakan dalam data absensi dan performa
-- **Automated Recommendations**: Saran keamanan berbasis AI
-
-### 📊 Data Pipeline
-
-- **Google Sheets Integration**: Langsung terhubung ke spreadsheet LKP LEAP
-- **Automated Data Cleaning**: Penanganan missing values, error patterns, dan outliers
-- **Real-time Data Loading**: Cache dengan TTL untuk performa optimal
-
-### 📈 Interactive Visualizations
-
-- **Attendance Analytics**: Analisis kehadiran siswa dengan grafik interaktif
-- **Security Metrics**: Metrik keamanan real-time
-- **Data Quality Reports**: Laporan kualitas data otomatis
-
-### 🎯 Specialized for LKP LEAP
-
-- **Student Data Monitoring**: Pemantauan data master siswa
-- **Attendance Tracking**: Sistem tracking absensi canggih
-- **Score Analysis**: Analisis performa akademik dengan deteksi anomali
-
-## 🏗️ Project Structure
-
-```
-dashboard_leap/
-├── app.py                    # 🎯 Entry point Streamlit dashboard
-├── config/
-│   └── settings.py           # ⚙️ Konfigurasi Google Sheets & GCP
-├── core/
-│   ├── data_pipeline.py      # 🔄 Pipeline data loading & cleaning
-│   ├── llm_analyzer.py       # 🤖 Google Gemini AI security analysis
-│   └── charts.py             # 📊 Plotly visualization helpers
-├── styles/
-│   └── style.css             # 🎨 Custom CSS untuk dashboard
-├── .streamlit/
-│   └── secrets.toml          # 🔐 Streamlit secrets (API keys, credentials)
-├── requirements.txt          # 📦 Python dependencies
-├── README.md                 # 📖 Dokumentasi proyek
-├── flow.md                   # 🔄 Dokumentasi arsitektur & flow
-└── note.md                   # 📝 Catatan setup & penggunaan
-```
-
-## 🚀 Installation
-
-### Prerequisites
-
-- Python 3.8+
-- Google Cloud Project dengan Google Sheets API enabled
-- Service Account credentials untuk Google Sheets access
-
-### Setup Steps
-
-1. **Clone Repository**
-
-```bash
-git clone <repository-url>
-cd dashboard_leap
-```
-
-2. **Create Virtual Environment**
-
-```bash
-python -m venv venv
-# Windows:
-venv\Scripts\activate
-# Linux/Mac:
-source venv/bin/activate
-```
-
-3. **Install Dependencies**
-
-```bash
-pip install -r requirements.txt
-```
-
-4. **Configure Secrets**
-   Edit `.streamlit/secrets.toml`:
-
-```toml
-# Gemini API Key
-GEMINI_API_KEY = "your-api-key-here"
-
-# Google Sheets Configuration
-spreadsheet_url = "https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/edit"
-
-# GCP Service Account (JSON format)
-[gcp_service_account_json]
-type = "service_account"
-project_id = "your-project-id"
-private_key_id = "..."
-private_key = "..."
-client_email = "..."
-# ... other service account fields
-```
-
-## 🎮 Usage
-
-### Running the Dashboard
-
-```bash
-streamlit run app.py
-```
-
-Dashboard akan terbuka di browser dengan 3 halaman utama:
-
-1. **📊 Overview**: Ringkasan data dan metrik utama
-2. **📅 Absensi**: Analisis kehadiran siswa mendalam
-3. **🛡️ Security Analysis**: Analisis keamanan berbasis AI
-
-### Data Sources
-
-Dashboard mengambil data dari Google Sheets dengan sheet berikut:
-
-- `DATA_MASTER`: Data master siswa
-- `DATA_ABSENSI`: Data absensi siswa
-- `DATA_NILAI`: Data nilai/performa
-- `DATA_PERTEMUAN`: Data pertemuan kelas
-
-## ⚙️ Configuration
-
-### Settings Configuration (`config/settings.py`)
-
-```python
-# Google Sheets Configuration
-SPREADSHEET_URL = "your-spreadsheet-url"
-SERVICE_ACCOUNT_PATH = "path/to/service-account.json"
-
-# Sheet Names
-SHEET_NAMES = ['DATA_MASTER', 'DATA_ABSENSI', 'DATA_NILAI', 'DATA_PERTEMUAN']
-
-# AI Configuration
-SECURITY_ANALYSIS_CONFIG = {
-    'system_instruction': "Kamu adalah Security Analyst untuk LKP LEAP...",
-    'max_analysis_length': 2000,
-    'temperature': 0.3
-}
-```
-
-### Environment Variables
-
-```bash
-# Alternative to secrets.toml
-export GEMINI_API_KEY="your-api-key"
-```
-
-## 🔄 Data Flow
-
-1. **Data Ingestion**: Load data dari Google Sheets menggunakan gspread
-2. **Data Cleaning**: Handle missing values, Google Sheets errors, data type conversion
-3. **Security Analysis**: AI analysis menggunakan Google Gemini untuk deteksi anomali
-4. **Visualization**: Interactive charts menggunakan Plotly
-5. **Reporting**: Automated security recommendations
-
-## 🤖 AI Features
-
-### Security Analysis Capabilities
-
-- Deteksi siswa dengan pola absensi mencurigakan
-- Analisis konsistensi data antar sheet
-- Identifikasi anomali performa akademik
-- Deteksi potensi masalah integritas data
-- Rekomendasi keamanan actionable
-
-### Gemini Integration
-
-- Context-aware analysis dengan system instructions khusus LKP LEAP
-- Multi-sheet data correlation
-- Natural language security insights
-- Automated recommendation generation
-
-## 📊 Data Quality Features
-
-- **Error Pattern Detection**: Otomatis detect dan clean Google Sheets errors (#ERROR!, #REF!, etc.)
-- **Missing Value Handling**: Smart imputation berdasarkan data type
-- **Duplicate Detection**: Identifikasi data duplikat
-- **Type Conversion**: Otomatis convert data types (date, numeric, boolean)
-- **Quality Reporting**: Comprehensive data quality metrics
-
-## 🔧 Development
-
-### Adding New Features
-
-1. Tambah function di `core/` modules
-2. Update `config/settings.py` jika perlu
-3. Test dengan data sample
-4. Update documentation
-
-### Code Style
-
-- Follow PEP 8
-- Use type hints
-- Add docstrings
-- Handle exceptions properly
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Import Error**: Pastikan semua dependencies terinstall
-
-```bash
-pip install -r requirements.txt
-```
-
-**Google Sheets Access**: Verifikasi service account credentials dan permissions
-
-**API Quota**: Check Google Cloud Console untuk Gemini API quota
-
-**Data Loading**: Pastikan spreadsheet URL dan sheet names benar
-
-## 📝 License
-
-This project is licensed under the MIT License.
-
-## 🆘 Support
-
-Untuk pertanyaan atau issues:
-
-1. Check existing issues di repository
-2. Buat issue baru dengan detail error
-3. Sertakan logs dan konfigurasi (tanpa credentials)
+Sistem ini didesain menggunakan **Genesis Design System** yang responsif dan mengedepankan pendekatan *Mobile First Approach (MFA)* tetapi tetap optimal saat dijalankan pada layar desktop.
 
 ---
 
-**⚡ Quick Start:**
+## 🎨 Arsitektur & Sumber Data Utama
 
-```bash
-git clone <repo>
-cd dashboard_leap
-pip install -r requirements.txt
-streamlit run app.py
-```
+EduDecision AI V2 memiliki dual-input terisolasi untuk memetakan dua aspek utama operasional lembaga:
 
-- Google Sheets URL/ID
-- Service account path
-- Sheet names
-- Project ID and app settings
+1. **Google Sheets (Fokus Akademik & Kehadiran)**:
+   * **Sumber Data**: `DATA_SISWA`, `DATA_ABSENSI`, `DATA_NILAI`, `DATA_KELUAR`, `DATA_OVERVIEW`.
+   * **Fokus**: Monitoring performa akademis (nilai ujian), tren kehadiran harian, dan prediksi retensi belajar siswa.
+   
+2. **Database SQL MariaDB (Fokus Operasional & Layanan Siswa)**:
+   * **Sumber Data**: Tabel `siswa`, `kursus_siswa`, `jadwal_siswa`, `catatan_siswa`, `catatan_remidi_siswa`, `web_statistik`.
+   * **Fokus**: Audit administrasi kelas (rombel), persetujuan rapor (*Rapor Approval*), penanganan kasus siswa oleh CS (*Customer Relationship*), dan audit log remedial.
 
-For secret overrides, use `.streamlit/secrets.toml`.
+---
 
-## Data Flow
+## ✨ Fitur Utama Sistem
 
-1. **Data Ingestion**: Load data from various sources
-2. **Data Cleaning**: Handle missing values, outliers, and inconsistencies
-3. **Feature Engineering**: Create new features and transform existing ones
-4. **Model Training**: Train ML models on prepared data
-5. **Model Evaluation**: Assess model performance and select best models
-6. **Visualization**: Create interactive dashboards and reports
-7. **AI Analysis**: Generate insights using LLM integration
+### 🏠 1. Unified LKP Overview (Default Landing Page)
+* Halaman utama ringkasan eksekutif setelah login yang menyinkronkan data Google Sheets dan MariaDB secara bersamaan.
+* Menyajikan KPI makro: Total siswa terdaftar, siswa aktif, rata-rata kehadiran harian, persentase kelulusan rapor, dan jumlah kasus observasi terbuka.
+* Visualisasi grafik tren kehadiran dan pembagian rombel secara berdampingan.
 
-## Contributing
+### 📊 2. Modul Akademik (Google Sheets)
+* **Performa Akademik & Grade**: Distribusi nilai ujian tengah semester (Mid) dan akhir (Final) beserta sebaran grade kelulusan.
+* **Kehadiran & Ketidakhadiran**: Analisis detail tren absensi harian dan identifikasi alasan ketidakhadiran (Sakit, Izin, Alfa).
+* **🔮 AI Student Predictor**: Analisis holistik kesehatan belajar siswa untuk mendeteksi siswa yang membutuhkan perhatian khusus (nilai rendah, kehadiran rendah, atau risiko putus les) beserta rencana mitigasi pembinaannya.
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+### 🗄️ 3. Modul Operasional (Database SQL)
+* **👤 Student 360 View**: Pencarian profil siswa terpadu yang merangkum data diri, riwayat kursus aktif, rombel jadwal, log remedial, hingga catatan kasus bimbingan CS.
+* **🏫 Rombel & Persetujuan Rapor**: Monitoring kemajuan persetujuan rapor per rombel kelas.
+* **🔍 Kasus Observasi (CRM/CS)**: Pelacakan kasus bimbingan siswa yang sedang diobservasi lebih lanjut oleh tim CS.
+* **📝 Audit Remedial**: Pelacakan riwayat kenaikan nilai siswa sebelum dan sesudah remedial serta status persetujuan guru pengampu.
 
-## License
+### 📥 4. Ekspor Laporan Premium (PNG Local Download)
+* Semua panel analisis AI dilengkapi dengan tombol unduh lokal (**Unduh Laporan sebagai PNG**).
+* Proses konversi dilakukan secara aman pada sisi peramban klien (*browser-side*) menggunakan library `html2canvas` dan `marked` di dalam Streamlit iframe sandbox.
+* **Tanpa Write-Back**: Sistem tidak menyimpan data rekomendasi AI ke database maupun Google Sheets demi menjaga integritas data asli.
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+---
 
-## Support
-
-For questions or issues, please open an issue on the GitHub repository.
-
-```
+## 🏗️ Struktur Proyek
 
 ```
+Dashboard_Leap/
+├── app.py                      # 🎯 Entry point Streamlit application
+├── config/
+│   └── settings.py             # ⚙️ Pengaturan & pemetaan variabel database/GSheets
+├── core/
+│   ├── data_pipeline.py        # 🔄 Pipeline penarikan, pembersihan, & mock data
+│   ├── llm_analyzer.py         # 🤖 Engine integrasi Gemini AI (Failover & Prompts)
+│   └── charts.py               # 📊 Visualisasi grafik interaktif (Plotly)
+├── styles/
+│   └── style.css               # 🎨 Lembar gaya Genesis Design System
+├── tests/
+│   ├── test_data_pipeline.py   # 🧪 Unit test untuk pipeline data
+│   ├── test_llm_analyzer.py    # 🧪 Unit test untuk prompt AI
+│   └── test_settings.py        # 🧪 Unit test untuk pemuatan konfigurasi
+├── .streamlit/
+│   └── secrets.toml            # 🔐 Kredensial rahasia (API Key, Service Account)
+├── requirements.txt            # 📦 Daftar dependensi Python
+├── README.md                   # 📖 Dokumentasi proyek utama
+└── GEMINI.md                   #  Konteks persisten untuk AI Code Assistant
+```
+
+---
+
+## 🚀 Pemasangan & Konfigurasi
+
+### Prasyarat Sistem
+* Python 3.9 s.d. 3.13
+* MariaDB / MySQL Server (Default: Port `3307` sesuai konfigurasi sistem LKP)
+
+### Langkah Setup
+
+1. **Clone repositori proyek**:
+   ```bash
+   git clone <url-repository>
+   cd Dashboard_Leap
+   ```
+
+2. **Buat & aktifkan virtual environment**:
+   ```bash
+   python -m venv .venv
+   # Windows (PowerShell):
+   .venv\Scripts\Activate.ps1
+   # Linux/Mac:
+   source .venv/bin/activate
+   ```
+
+3. **Instal dependensi**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Konfigurasi Secrets**:
+   Buat atau sesuaikan file `.streamlit/secrets.toml` dengan format berikut:
+   ```toml
+   # Gemini API Key
+   GEMINI_API_KEY = "AIzaSy..."
+
+   # Google Sheets URL
+   spreadsheet_url = "https://docs.google.com/spreadsheets/d/ID_SPREADSHEET/edit"
+
+   # MariaDB Config
+   mariadb_host = "127.0.0.1"
+   mariadb_port = 3307
+   mariadb_user = "root"
+   mariadb_password = ""
+   mariadb_database = "dataleap_v5_migration"
+
+   # Password Login
+   SYSTEM_PASSWORD = "leapadmin2026"
+
+   # GCP Service Account
+   [gcp_service_account_json]
+   type = "service_account"
+   project_id = "dashboard-leap"
+   private_key_id = "..."
+   private_key = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+   client_email = "..."
+   # ... lengkapi field lainnya
+   ```
+
+---
+
+## 🎮 Cara Menjalankan
+
+### 1. Menjalankan Dashboard Streamlit
+```powershell
+.venv/Scripts/python.exe -m streamlit run app.py
+```
+Aplikasi secara default dapat diakses melalui peramban di alamat `http://localhost:8501`.
+
+### 2. Menjalankan Unit Test (Pytest)
+Untuk memverifikasi fungsionalitas pipeline data, prompt, dan settings, jalankan:
+```powershell
+.venv/Scripts/python.exe -m pytest -v
+```
+
+---
+
+## 🤖 Failover Model Gemini AI
+Modul analisis didesain tangguh terhadap kendala kuota API (*rate limiting*) menggunakan mekanisme *failover loop* dengan prioritas model sebagai berikut:
+1. `gemini-3.1-flash-lite-preview`
+2. `gemini-3-flash-preview`
+3. `gemini-2.5-flash-lite`
+4. `gemini-2.5-flash`
+5. `gemini-2.0-flash-lite`
+6. `gemini-2.0-flash`
+7. `gemini-3.1-pro-preview`
+8. `gemma-3-27b-it`
+9. `gemini-flash-latest` (1.5 Flash - Stabil Fallback)
+
+---
+
+## 🔐 Keamanan & Kebijakan Data
+* **Kredensial**: File `.streamlit/secrets.toml` dan berkas kunci JSON akun layanan tidak boleh di-commit ke Git.
+* **Akses Read-Only**: Database dan Sheets diproses secara *Read-Only* di tingkat aplikasi untuk menghindari manipulasi data yang tidak sengaja.
+* **Mock Failover Engine**: Jika koneksi MariaDB lokal gagal dijangkau, sistem akan otomatis beralih menggunakan simulasi mesin data (*Mock Engine*) sehingga dashboard tetap dapat diuji.
