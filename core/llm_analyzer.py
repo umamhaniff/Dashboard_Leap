@@ -20,7 +20,45 @@ def get_api_key() -> str:
         return st.secrets['GEMINI_API_KEY']
     return os.getenv('GEMINI_API_KEY', "")
 
-def analyze_security(dataframes: dict) -> str:
+def get_academic_prompt(dataframes: dict) -> str:
+    """Generate prompt template for Google Sheets (Academic focus)."""
+    combined = "=== AUDIT AKADEMIK & NILAI SISWA (GOOGLE SHEETS - ACADEMIC) ===\n"
+    for name in ["DATA_SISWA", "DATA_NILAI", "DATA_KELUAR"]:
+        df = dataframes.get(name)
+        if df is not None and not df.empty:
+            combined += f"\n[TABEL: {name}]\n{df.head(40).to_string(index=False)}\n"
+    
+    return f"""Kamu adalah Academic Decision Support Assistant untuk LKP LEAP.
+Tugasmu adalah menganalisis data nilai siswa, sebaran grade, dan kasus remedi untuk memberikan rekomendasi evaluasi akademik.
+Fokus Analisis:
+1. Identifikasi program/rombel dengan tingkat remedi tertinggi.
+2. Analisis korelasi antara kehadiran dengan pencapaian nilai (grade).
+3. Berikan usulan perbaikan pembelajaran yang konkret untuk siswa remedi.
+
+Data Input:
+{combined}
+"""
+
+def get_operations_prompt(dataframes: dict) -> str:
+    """Generate prompt template for MariaDB (Operations focus)."""
+    combined = "=== AUDIT OPERASIONAL & PROFILE SISWA (MARIADB) ===\n"
+    for name in ["siswa", "kursus_siswa", "jadwal_siswa", "catatan_siswa", "catatan_remidi_siswa"]:
+        df = dataframes.get(name)
+        if df is not None and not df.empty:
+            combined += f"\n[TABEL: {name}]\n{df.head(40).to_string(index=False)}\n"
+            
+    return f"""Kamu adalah Database Operations Auditor untuk LKP LEAP.
+Tugasmu mengaudit konsistensi status keaktifan siswa, log kasus observasi, dan riwayat perbaikan remidi pada database operasional.
+Fokus Analisis:
+1. Temukan siswa yang terjebak pada status 'NEED FURTHER OBSERVATION' yang belum selesai ditangani.
+2. Periksa inkonsistensi data (misal siswa non-aktif tapi masih terdaftar tuntas di kelas berjalan).
+3. Berikan saran tindak lanjut administratif untuk penyelesaian kasus siswa.
+
+Data Input:
+{combined}
+"""
+
+def analyze_security(dataframes: dict, source_type: str = "google_sheets") -> str:
     """
     Melakukan audit keamanan dengan mencoba list model satu per satu.
     Berhenti saat berhasil mendapatkan respon, atau loncat jika terkena 429 (Rate Limit).
@@ -45,23 +83,22 @@ def analyze_security(dataframes: dict) -> str:
         'models/gemini-flash-latest'          # Fallback: Paling stabil (1.5 Flash)
     ]
 
-    # Menyiapkan data context (Audit Holistik)
-    combined_data = "=== AUDIT SECURITY DATA LEAP ===\n"
-    for name, df in dataframes.items():
-        if not df.empty:
-            # Mengambil 40 baris pertama agar LLM punya konteks yang cukup
-            combined_data += f"\n[TABEL: {name}]\n{df.head(40).to_string(index=False)}\n"
-    
-    prompt = f"Lakukan audit keamanan holistik dan temukan anomali pada data berikut:\n{combined_data}"
+    # Ambil prompt dan system instruction sesuai source_type
+    if source_type == "google_sheets":
+        prompt = get_academic_prompt(dataframes)
+        sys_instruction = "Kamu adalah Asisten Analisis Akademik LKP LEAP."
+    else:
+        prompt = get_operations_prompt(dataframes)
+        sys_instruction = "Kamu adalah Auditor Integritas Database Siswa LKP LEAP."
 
     # --- FAILOVER LOOP ---
     last_error = ""
     for model_name in models_to_try:
         try:
-            logger.info(f"Mencoba audit keamanan dengan: {model_name}")
+            logger.info(f"Mencoba audit {source_type} dengan: {model_name}")
             model = genai.GenerativeModel(
                 model_name=model_name,
-                system_instruction=SECURITY_ANALYSIS_CONFIG['system_instruction']
+                system_instruction=sys_instruction
             )
             
             response = model.generate_content(prompt)
