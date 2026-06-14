@@ -87,10 +87,10 @@ def analyze_security(dataframes: dict, source_type: str = "google_sheets") -> st
     # Ambil prompt dan system instruction sesuai source_type
     if source_type == "google_sheets":
         prompt = get_academic_prompt(dataframes)
-        sys_instruction = "Kamu adalah Asisten Analisis Akademik LKP LEAP."
+        sys_instruction = "Kamu adalah Asisten Analisis Akademik LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan atau kalimat tanya terbuka di akhir tanggapan Anda."
     else:
         prompt = get_operations_prompt(dataframes)
-        sys_instruction = "Kamu adalah Auditor Integritas Database Siswa LKP LEAP."
+        sys_instruction = "Kamu adalah Auditor Integritas Database Siswa LKP LEAP. Sajikan data, audit, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan atau kalimat tanya terbuka di akhir tanggapan Anda."
 
     # --- FAILOVER LOOP ---
     last_error = ""
@@ -176,7 +176,7 @@ Data Siswa:
                 model=model_name,
                 contents=prompt,
                 config=types.GenerateContentConfig(
-                    system_instruction="Kamu adalah Konsultan Pendidikan AI LKP LEAP."
+                    system_instruction="Kamu adalah Konsultan Pendidikan AI LKP LEAP. Sajikan analisis, rekomendasi, dan mitigasi secara objektif. Jangan pernah mengajukan pertanyaan atau kalimat tanya terbuka di akhir tanggapan Anda."
                 )
             )
             return f"**System Intelligence: {model_name}**\n\n{response.text.strip()}"

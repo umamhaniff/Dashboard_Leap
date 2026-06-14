@@ -27,6 +27,17 @@
   font-family: 'DM Sans', -apple-system, system-ui, sans-serif !important;
 }
 
+/* Global readable text sizes for markdown paragraphs and lists */
+[data-testid="stMarkdownContainer"] p {
+  font-size: 15.5px !important;
+  line-height: 1.6 !important;
+}
+
+[data-testid="stMarkdownContainer"] li {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+}
+
 /* --- Genesis Signature Futuristic Dot Grid Background & Top Ambient Glow --- */
 .stApp {
   background-image: radial-gradient(var(--genesis-dot-color) 1.5px, transparent 1.5px) !important;
@@ -91,7 +102,7 @@ h1, h2, h3, h4, h5, h6,
 
 .genesis-tagline {
   font-family: 'DM Sans', sans-serif !important;
-  font-size: 14px !important;
+  font-size: 15.5px !important;
   color: var(--text-color) !important;
   opacity: 0.75 !important;
   margin-bottom: 24px !important;
@@ -104,7 +115,7 @@ h1, h2, h3, h4, h5, h6,
     margin-top: 24px !important;
   }
   .genesis-tagline {
-    font-size: 15px !important;
+    font-size: 16.5px !important;
     margin-bottom: 32px !important;
   }
 }
@@ -153,7 +164,8 @@ form[data-testid="stForm"] {
   border: 1px solid var(--genesis-border, rgba(99, 102, 241, 0.12)) !important;
   border-radius: 12px !important;
   padding: 32px 24px !important;
-  max-width: 440px !important;
+  width: 100% !important;
+  max-width: 100% !important;
   margin: 40px auto 0 auto !important;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.03) !important;
   position: relative !important;
@@ -205,7 +217,15 @@ form[data-testid="stForm"] button:active {
 
 @media (min-width: 768px) {
   form[data-testid="stForm"] {
+    max-width: 680px !important;
     padding: 40px 32px !important;
+    margin: 60px auto 0 auto !important;
+  }
+}
+
+@media (min-width: 1200px) {
+  form[data-testid="stForm"] {
+    max-width: 850px !important;
     margin: 80px auto 0 auto !important;
   }
 }
@@ -213,7 +233,7 @@ form[data-testid="stForm"] button:active {
 /* --- Card Styles (Genesis Metric Cards) --- */
 div[data-testid="stMetricValue"] {
   font-family: 'General Sans', sans-serif !important;
-  font-size: 24px !important; /* Mobile size */
+  font-size: 28px !important; /* Mobile size */
   font-weight: 700 !important;
   letter-spacing: -0.03em !important;
   color: var(--text-color) !important;
@@ -221,16 +241,16 @@ div[data-testid="stMetricValue"] {
 
 @media (min-width: 768px) {
   div[data-testid="stMetricValue"] {
-    font-size: 32px !important; /* Scale up */
+    font-size: 38px !important; /* Scale up */
   }
 }
 
 div[data-testid="stMetricLabel"] > div {
   font-family: 'DM Sans', sans-serif !important;
-  font-size: 13px !important;
+  font-size: 15px !important;
   font-weight: 500 !important;
   color: var(--text-color) !important;
-  opacity: 0.7 !important;
+  opacity: 0.75 !important;
 }
 
 div[data-testid="metric-container"] {

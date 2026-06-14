@@ -82,8 +82,8 @@ def display_sidebar_debug(cleaned_data):
 
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
-if 'selected_source' not in st.session_state:
-    st.session_state.selected_source = None
+if 'selected_source' not in st.session_state or st.session_state.selected_source is None:
+    st.session_state.selected_source = 'google_sheets'
 if 'run_analysis' not in st.session_state:
     st.session_state.run_analysis = False
 if 'analysis_result' not in st.session_state:
@@ -91,137 +91,117 @@ if 'analysis_result' not in st.session_state:
 
 # --- PASSWORD GATE ---
 if not st.session_state.logged_in:
-    col_l1, col_l2, col_l3 = st.columns([1, 2, 1])
-    with col_l2:
-        with st.form(key="login_form"):
-            st.markdown('<div style="text-align: center; font-size: 50px; margin-bottom: 10px;">🛡️</div>', unsafe_allow_html=True)
-            st.markdown('<h2 style="text-align: center; font-family: General Sans, sans-serif; font-weight: 700; margin-top: 0; margin-bottom: 5px;">EduDecision AI</h2>', unsafe_allow_html=True)
-            st.markdown('<p style="text-align: center; color: var(--text-color); opacity: 0.7; font-size: 14px; margin-bottom: 20px;">Sistem Analisis Keputusan LKP LEAP</p>', unsafe_allow_html=True)
-            
-            # Get real statuses
-            sheets_ok, db_ok = check_connection_statuses()
-            
-            percentage_text = "100% READY" if (sheets_ok and db_ok) else ("50% PARTIAL" if (sheets_ok or db_ok) else "DISCONNECTED")
-            percentage_class = " " if (sheets_ok and db_ok) else (" partial" if (sheets_ok or db_ok) else " disconnected")
-            progress_width = "100%" if (sheets_ok and db_ok) else ("50%" if (sheets_ok or db_ok) else "10%")
-            progress_class = " " if (sheets_ok and db_ok) else (" partial" if (sheets_ok or db_ok) else " disconnected")
-            
-            sheets_badge = "Online" if sheets_ok else "Offline"
-            sheets_badge_class = "connected" if sheets_ok else "disconnected"
-            sheets_card_class = "connected" if sheets_ok else "disconnected"
-            sheets_meta = "● 5 Sheets Synced" if sheets_ok else "● Connection Error"
-            sheets_meta_class = "connected" if sheets_ok else "disconnected"
-            
-            db_badge = "Online" if db_ok else "Offline"
-            db_badge_class = "connected" if db_ok else "disconnected"
-            db_card_class = "connected" if db_ok else "disconnected"
-            db_meta = "● Active Logs OK" if db_ok else "● Using Mock Data"
-            db_meta_class = "connected" if db_ok else "disconnected"
-            
-            st.markdown(
-                f'<div class="genesis-sync-wrapper">'
-                f'<div class="genesis-sync-header">'
-                f'<span class="genesis-sync-title">Status Sinkronisasi Data</span>'
-                f'<span class="genesis-sync-percentage{percentage_class}">{percentage_text}</span>'
-                f'</div>'
-                f'<div class="genesis-sync-progress-track">'
-                f'<div class="genesis-sync-progress-bar{progress_class}" style="width: {progress_width};"></div>'
-                f'</div>'
-                f'<div class="genesis-sync-grid">'
-                f'<div class="genesis-sync-card {sheets_card_class}">'
-                f'<div class="genesis-sync-card-header">'
-                f'<span class="genesis-sync-card-icon">📊</span>'
-                f'<span class="genesis-sync-card-status-badge {sheets_badge_class}">{sheets_badge}</span>'
-                f'</div>'
-                f'<div class="genesis-sync-card-title">Google Sheets</div>'
-                f'<div class="genesis-sync-card-desc">Absensi & Nilai</div>'
-                f'<div class="genesis-sync-card-meta {sheets_meta_class}">{sheets_meta}</div>'
-                f'</div>'
-                f'<div class="genesis-sync-card {db_card_class}">'
-                f'<div class="genesis-sync-card-header">'
-                f'<span class="genesis-sync-card-icon">🗄️</span>'
-                f'<span class="genesis-sync-card-status-badge {db_badge_class}">{db_badge}</span>'
-                f'</div>'
-                f'<div class="genesis-sync-card-title">Database SQL</div>'
-                f'<div class="genesis-sync-card-desc">Statistik Website</div>'
-                f'<div class="genesis-sync-card-meta {db_meta_class}">{db_meta}</div>'
-                f'</div>'
-                f'</div>'
-                f'</div>',
-                unsafe_allow_html=True
-            )
-            
-            password = st.text_input("Enter Password", type="password", placeholder="Masukkan password sistem...", label_visibility="collapsed")
-            submit = st.form_submit_button("Sign In")
-            
-            if submit:
-                target_pass = st.secrets.get("SYSTEM_PASSWORD", "leapadmin2026")
-                if password == target_pass:
-                    st.session_state.logged_in = True
-                    st.rerun()
-                else:
-                    st.error("Password salah. Silakan hubungi administrator.")
-    st.stop()
-
-# --- SOURCE SELECTION ---
-if st.session_state.selected_source is None:
-    st.markdown('<h2 style="text-align: center; font-family: General Sans, sans-serif; font-weight: 700; margin-top: 40px; margin-bottom: 5px;">Pilih Sumber Data Utama</h2>', unsafe_allow_html=True)
-    st.markdown('<p style="text-align: center; color: var(--text-color); opacity: 0.7; margin-bottom: 40px;">Tentukan data yang ingin dianalisis saat ini.</p>', unsafe_allow_html=True)
-    
-    col_s1, col_s2 = st.columns(2)
-    
-    with col_s1:
+    with st.form(key="login_form"):
+        st.markdown('<div style="text-align: center; font-size: 50px; margin-bottom: 10px;">🛡️</div>', unsafe_allow_html=True)
+        st.markdown('<h2 style="text-align: center; font-family: General Sans, sans-serif; font-weight: 700; margin-top: 0; margin-bottom: 5px;">EduDecision AI</h2>', unsafe_allow_html=True)
+        st.markdown('<p style="text-align: center; color: var(--text-color); opacity: 0.7; font-size: 14px; margin-bottom: 20px;">Sistem Analisis Keputusan LKP LEAP</p>', unsafe_allow_html=True)
+        
+        # Get real statuses
+        sheets_ok, db_ok = check_connection_statuses()
+        
+        percentage_text = "100% READY" if (sheets_ok and db_ok) else ("50% PARTIAL" if (sheets_ok or db_ok) else "DISCONNECTED")
+        percentage_class = " " if (sheets_ok and db_ok) else (" partial" if (sheets_ok or db_ok) else " disconnected")
+        progress_width = "100%" if (sheets_ok and db_ok) else ("50%" if (sheets_ok or db_ok) else "10%")
+        progress_class = " " if (sheets_ok and db_ok) else (" partial" if (sheets_ok or db_ok) else " disconnected")
+        
+        sheets_badge = "Online" if sheets_ok else "Offline"
+        sheets_badge_class = "connected" if sheets_ok else "disconnected"
+        sheets_card_class = "connected" if sheets_ok else "disconnected"
+        sheets_meta = "● 5 Sheets Synced" if sheets_ok else "● Connection Error"
+        sheets_meta_class = "connected" if sheets_ok else "disconnected"
+        
+        db_badge = "Online" if db_ok else "Offline"
+        db_badge_class = "connected" if db_ok else "disconnected"
+        db_card_class = "connected" if db_ok else "disconnected"
+        db_meta = "● Active Logs OK" if db_ok else "● Using Mock Data"
+        db_meta_class = "connected" if db_ok else "disconnected"
+        
         st.markdown(
-            '<div class="genesis-futuristic-card">'
-            '<h3>📊 Google Sheets</h3>'
-            '<p style="color: var(--text-color); opacity: 0.8; font-size: 14px;">Laporan kehadiran presensi (absensi) dan sebaran nilai belajar siswa LKP LEAP.</p>'
-            '</div>',
+            f'<div class="genesis-sync-wrapper">'
+            f'<div class="genesis-sync-header">'
+            f'<span class="genesis-sync-title">Status Sinkronisasi Data</span>'
+            f'<span class="genesis-sync-percentage{percentage_class}">{percentage_text}</span>'
+            f'</div>'
+            f'<div class="genesis-sync-progress-track">'
+            f'<div class="genesis-sync-progress-bar{progress_class}" style="width: {progress_width};"></div>'
+            f'</div>'
+            f'<div class="genesis-sync-grid">'
+            f'<div class="genesis-sync-card {sheets_card_class}">'
+            f'<div class="genesis-sync-card-header">'
+            f'<span class="genesis-sync-card-icon">📊</span>'
+            f'<span class="genesis-sync-card-status-badge {sheets_badge_class}">{sheets_badge}</span>'
+            f'</div>'
+            f'<div class="genesis-sync-card-title">Google Sheets</div>'
+            f'<div class="genesis-sync-card-desc">Absensi & Nilai</div>'
+            f'<div class="genesis-sync-card-meta {sheets_meta_class}">{sheets_meta}</div>'
+            f'</div>'
+            f'<div class="genesis-sync-card {db_card_class}">'
+            f'<div class="genesis-sync-card-header">'
+            f'<span class="genesis-sync-card-icon">🗄️</span>'
+            f'<span class="genesis-sync-card-status-badge {db_badge_class}">{db_badge}</span>'
+            f'</div>'
+            f'<div class="genesis-sync-card-title">Database SQL</div>'
+            f'<div class="genesis-sync-card-desc">Statistik Website</div>'
+            f'<div class="genesis-sync-card-meta {db_meta_class}">{db_meta}</div>'
+            f'</div>'
+            f'</div>'
+            f'</div>',
             unsafe_allow_html=True
         )
-        if st.button("Pilih Google Sheets", key="btn_sheets", use_container_width=True, type="primary"):
-            st.session_state.selected_source = 'google_sheets'
-            st.session_state.run_analysis = False
-            st.session_state.analysis_result = None
-            st.rerun()
-            
-    with col_s2:
-        st.markdown(
-            '<div class="genesis-futuristic-card">'
-            '<h3>🗄️ Database SQL</h3>'
-            '<p style="color: var(--text-color); opacity: 0.8; font-size: 14px;">Log aktivitas trafik, data pengunjung, dan statistik akses website LKP LEAP.</p>'
-            '</div>',
-            unsafe_allow_html=True
-        )
-        if st.button("Pilih Database SQL", key="btn_sql", use_container_width=True, type="primary"):
-            st.session_state.selected_source = 'mariadb'
-            st.session_state.run_analysis = False
-            st.session_state.analysis_result = None
-            st.rerun()
-            
+        
+        password = st.text_input("Enter Password", type="password", placeholder="Masukkan password sistem...", label_visibility="collapsed")
+        submit = st.form_submit_button("Sign In")
+        
+        if submit:
+            target_pass = st.secrets.get("SYSTEM_PASSWORD", "leapadmin2026")
+            if password == target_pass:
+                st.session_state.logged_in = True
+                st.rerun()
+            else:
+                st.error("Password salah. Silakan hubungi administrator.")
     st.stop()
 
-# --- SUB NAV FROSTED BAR ---
-col_sub1, col_sub2 = st.columns([3, 1])
-with col_sub1:
-    source_title = "Google Sheets (Absensi & Nilai)" if st.session_state.selected_source == 'google_sheets' else "Database SQL (Statistik Website)"
-    st.markdown(f'<div style="font-family: General Sans, sans-serif; font-size: 20px; font-weight: 700; padding: 10px 0;">Sumber Data Aktif: {source_title}</div>', unsafe_allow_html=True)
+# --- SIDEBAR NAVIGATION (STREAMLIT NATIVE NAVBAR) ---
+st.sidebar.markdown('<div style="text-align: center; font-size: 50px;">🛡️</div>', unsafe_allow_html=True)
+st.sidebar.markdown('<h3 style="text-align: center; font-family: General Sans, sans-serif; font-weight: 700; margin-top: 0; margin-bottom: 5px;">EduDecision AI</h3>', unsafe_allow_html=True)
+st.sidebar.markdown('<p style="text-align: center; color: var(--text-color); opacity: 0.7; font-size: 12px; margin-bottom: 20px;">Sistem Analisis Keputusan LKP LEAP</p>', unsafe_allow_html=True)
+st.sidebar.markdown('---')
 
-with col_sub2:
-    st.write("")
-    col_c1, col_c2 = st.columns(2)
-    with col_c1:
-        if st.button("Switch", use_container_width=True):
-            st.session_state.selected_source = None
-            st.session_state.run_analysis = False
-            st.session_state.analysis_result = None
-            st.rerun()
-    with col_c2:
-        if st.button("Sign Out", use_container_width=True):
-            st.session_state.logged_in = False
-            st.session_state.selected_source = None
-            st.session_state.run_analysis = False
-            st.session_state.analysis_result = None
-            st.rerun()
+# Navigation Radio for Data Source Selection
+source_options = {
+    "📊 Google Sheets (Academic)": "google_sheets",
+    "🗄️ Database SQL (Operations)": "mariadb"
+}
+
+# Determine default index
+current_source = st.session_state.selected_source
+default_index = 0
+if current_source == "mariadb":
+    default_index = 1
+
+selected_label = st.sidebar.radio(
+    "Navigasi Data",
+    options=list(source_options.keys()),
+    index=default_index,
+    key="active_source_radio"
+)
+
+new_source = source_options[selected_label]
+if new_source != st.session_state.selected_source:
+    st.session_state.selected_source = new_source
+    st.session_state.run_analysis = False
+    st.session_state.analysis_result = None
+    st.rerun()
+
+st.sidebar.markdown('---')
+
+# Sign Out Button
+if st.sidebar.button("🚪 Sign Out", use_container_width=True, type="secondary"):
+    st.session_state.logged_in = False
+    st.session_state.selected_source = 'google_sheets'  # reset to default
+    st.session_state.run_analysis = False
+    st.session_state.analysis_result = None
+    st.rerun()
 
 st.markdown("---")
 
