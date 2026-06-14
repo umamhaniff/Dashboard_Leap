@@ -1,27 +1,95 @@
-.main-header {
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #1f77b4;
-  text-align: center;
-  margin-bottom: 2rem;
+/* --- Apple Typography & Base Canvas --- */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap');
+
+html, body, [data-testid="stAppViewContainer"] {
+  font-family: 'Outfit', -apple-system, system-ui, sans-serif !important;
+  background-color: #f5f5f7 !important; /* Canvas Parchment */
+  color: #1d1d1f !important; /* Near-black Ink */
 }
-.metric-card {
-  background-color: #f0f2f6;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  border-left: 4px solid #1f77b4;
+
+/* --- Navigation Bars --- */
+.apple-global-nav {
+  background-color: #000000;
+  color: #ffffff;
+  padding: 10px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  letter-spacing: -0.12px;
+  margin-top: -60px;
+  margin-bottom: 20px;
 }
-.security-alert {
-  background-color: #fff3cd;
-  border: 1px solid #ffeeba;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin: 1rem 0;
+
+.apple-sub-nav {
+  background-color: rgba(245, 245, 247, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid #e0e0e0;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
 }
-.recommendation-box {
-  background-color: #d1ecf1;
-  border: 1px solid #bee5eb;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin: 0.5rem 0;
+
+/* --- Hero Displays --- */
+.apple-hero-display {
+  font-family: 'Outfit', sans-serif;
+  font-size: 44px !important;
+  font-weight: 600 !important;
+  line-height: 1.1;
+  letter-spacing: -0.374px !important;
+  color: #1d1d1f !important;
+  margin-bottom: 5px;
+}
+
+.apple-tagline {
+  font-size: 19px !important;
+  color: #7a7a7a !important;
+  margin-bottom: 35px;
+}
+
+/* --- Card Styles --- */
+div[data-testid="stMetricValue"] {
+  font-size: 34px !important;
+  font-weight: 600 !important;
+  color: #1d1d1f !important;
+}
+
+div[data-testid="metric-container"] {
+  background-color: #ffffff !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 18px !important; /* rounded.lg */
+  padding: 18px !important;
+  box-shadow: none !important; /* No shadow */
+}
+
+/* --- AI recommendations (Resting Shadow) --- */
+.apple-ai-panel {
+  background-color: #1d1d1f !important;
+  color: #ffffff !important;
+  border-radius: 18px !important;
+  padding: 24px;
+  box-shadow: rgba(0, 0, 0, 0.22) 3px 5px 30px 0 !important; /* Single Shadow */
+  margin-top: 20px;
+}
+
+.apple-ai-panel h3 {
+  color: #2997ff !important;
+  font-weight: 600;
+}
+
+/* --- Buttons --- */
+button[kind="primary"] {
+  background-color: #0066cc !important; /* Action Blue */
+  color: white !important;
+  border-radius: 9999px !important; /* rounded.pill */
+  border: none !important;
+  padding: 8px 18px !important;
+  transition: transform 0.1s ease;
+}
+
+button[kind="primary"]:active {
+  transform: scale(0.95); /* scale micro-interaction */
 }
