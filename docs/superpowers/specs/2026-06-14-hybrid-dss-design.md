@@ -35,39 +35,45 @@ Berdasarkan analisis kebutuhan terbaru, sistem ini mengisolasi **2 Input berbeda
             |                                                       |
             v                                                       v
 +-----------------------+                               +-----------------------+
-|  Dashboard Akademik   |                               |  Dashboard ERP Audit  |
-|  - Rombel & Siswa     |                               |  - Pipeline Leads FO  |
-|  - Kehadiran & Absen  |                               |  - Kehadiran Karyawan |
-|  - Nilai & Remidi     |                               |  - Audit Activity Log |
+|  Dashboard Akademik   |                               | Dashboard Relasi Siswa|
+|  - Rata-rata Nilai    |                               |  - Profil Siswa 360   |
+|  - Distribusi Grade   |                               |  - Rombel & Jadwal    |
+|  - Siswa Remidi       |                               |  - Catatan & FollowUp |
 +-----------+-----------+                               +-----------+-----------+
             |                                                       |
             v                                                       v
 +-----------------------+                               +-----------------------+
-| AI: Retention Engine  |                               | AI: Security Engine   |
+| AI: Academic Engine   |                               | AI: Operations Engine |
 | - Gemini Failover     |                               | - Gemini Failover     |
-| - Rekomendasi Retensi |                               | - Deteksi Anomali     |
+| - Rekomendasi Remidi  |                               | - Audit Catatan & Log |
 +-----------------------+                               +-----------------------+
 ```
 
-### A. Modul 1: Google Sheets (Akademik)
+### A. Modul 1: Google Sheets (Academic Performance & Grades Focus)
 *   **Input Data**: Sheet `DATA_SISWA`, `DATA_ABSENSI`, `DATA_NILAI`, `DATA_KELUAR`, dan `DATA_OVERVIEW`.
-*   **KPI & Metrik Operasional** (Berdasarkan `docs/dashboard_context.md`):
-    *   **High-Level Summary**: Jumlah Rombel (16), Siswa Aktif (236), Siswa Keluar (4), Kelas Tambahan (42), Siswa Pengganti (34).
-    *   **Kehadiran**: Tren kehadiran harian siswa, Top/Bottom 3 Rombel terbaik/terendah, persentase alasan ketidakhadiran (Tanpa Keterangan: 50.6%, Izin: 21.8%, Sakit: 8.9%).
-    *   **Nilai & Remidi**: Performa rata-rata kelas (Mid-Test: 54.93, Final-Test: 71.60), distribusi grade (A, B, C, D, E, F), total siswa remedi (305 siswa) dengan batas nilai kelulusan 70.
-    *   **Siswa Keluar**: Segmentasi alasan keluar (tidak tertarik: 20%, instruktur tidak cocok: 17.1%) dan daftar siswa pengganti (*Replaced*).
-*   **Output Dashboard**: Visualisasi Plotly berupa tren kehadiran harian, bar chart rombel performa, histogram distribusi grade nilai, dan dataframe interaktif daftar siswa remedi/keluar.
-*   **AI Engine (Prescriptive Retention)**: Pemicuan manual Gemini untuk menganalisis anomali kehadiran siswa dan memberikan 5 rekomendasi mitigasi retensi akademik.
+*   **KPI Utama & Penekanan Akademik** (Berdasarkan `docs/dashboard_context.md`):
+    *   **Performa Rata-Rata Nilai**: Perbandingan performa program (Komputer vs Bahasa Inggris: Mid-Test 54.93, Final-Test 71.60).
+    *   **Distribusi Grade Nilai**: Analisis persentase gabungan (Grade E: 26.7%, Grade F: 23.3%, B: 16.0%, C: 13.5%, A: 10.2%, D: 10.0%) serta segmentasi per jenjang (SD vs SMP) dan jenis program (Single vs Double Program).
+    *   **Metrik Remidi**: Total 305 siswa remidi dengan batas atas nilai remedi (Score <= 70) dan pelacakan detail status ketuntasan siswa.
+    *   **Metrik Penunjang**: Ringkasan operasional rombel dan tren kehadiran harian sebagai context pendukung untuk performa akademik.
+*   **Output Dashboard**: Histogram interaktif untuk distribusi nilai, diagram batang sebaran grade siswa per kelompok kelas, tabel ringkasan daftar siswa remidi, dan panel metrik rata-rata nilai.
+*   **AI Engine (Prescriptive Academic Engine)**: Pemicuan manual Gemini untuk menganalisis penurunan nilai siswa, mendeteksi korelasi antara ketidakhadiran dan nilai jelek, serta menyusun rekomendasi mitigasi ketuntasan belajar.
 
-### B. Modul 2: MariaDB Database (ERP & Security Audit)
-*   **Input Data**: Query SQL langsung dari database lokal `dataleap_v5_migration` (Port `3077`) untuk tabel `calon_siswa`, `calon_siswa_akademik`, `calon_siswa_bayar`, `web_statistik`, `karyawan`, `absensi` (karyawan), dan `activity_log`.
-*   **KPI & Metrik Operasional** (Berdasarkan `docs/database_context.md`):
-    *   **Pipeline CRM (Calon Siswa)**: Tingkat konversi leads (`kontak_prospek`) dari status 'baru' -> `calon_siswa` -> pengisian form (`calon_siswa_akademik`) -> kelulusan pipeline -> transaksi pembayaran (`calon_siswa_bayar`).
-    *   **HR Karyawan**: Absensi harian karyawan (Tepat Waktu, Izin, Terlambat, Hadir) dan jenis pengajuan izin (Sakit, Cuti, Lembur, Ijin Darurat).
-    *   **Kemitraan (BusDev)**: Progres deal kemitraan B2B dan pembagian link folder drive.
-    *   **Audit Activity Log**: Log mutasi database (Create, Update, Delete) yang direkam dalam format payload JSON.
-*   **Output Dashboard**: Statistik konversi pipeline leads CRM, kepatuhan kehadiran staf karyawan, dan visualisasi aktivitas write/delete database untuk keperluan compliance.
-*   **AI Engine (Security & Integrity Audit)**: Pemicuan manual Gemini untuk mendeteksi akses mencurigakan di luar jam kerja, anomali input, dan inkonsistensi foreign key, serta menyusun rekomendasi mitigasi keamanan.
+### B. Modul 2: MariaDB Database (Student Profiles & Relations Focus)
+*   **Input Data**: Query SQL langsung dari database lokal `dataleap_v5_migration` (Port `3077`) dengan fokus utama pada tabel **`siswa`** dan tabel anak relasionalnya:
+    *   `siswa` (Master Data Siswa Aktif hasil migrasi)
+    *   `kursus_siswa` (Mapping program yang diambil, status keaktifan, dan status kelulusan siswa)
+    *   `jadwal_siswa` (Peta rombel siswa, persetujuan rapor `is_acc_rapor`, status keluar, dan ketuntasan kelas)
+    *   `catatan_siswa` & `followup_cs` (Catatan perkembangan, kendala kelas siswa, dan tracking kasus)
+    *   `catatan_remidi_siswa` (Log perbaikan nilai yang disetujui guru)
+    *   `calon_siswa` (Sebagai data hulu pipeline CRM sebelum resmi menjadi siswa)
+*   **KPI & Fokus Relasi Siswa** (Berdasarkan `docs/database_context.md`):
+    *   **Student Profile & Enrollment**: Distribusi siswa aktif berdasarkan level program dan rombel kelas.
+    *   **Class & Schedule Tracking**: Status ketuntasan siswa di rombel harian, status persetujuan rapor oleh management, dan pelacakan siswa keluar (`status_keluar`).
+    *   **Behavioral & Case Follow-up**: Analisis status kasus siswa (`NEED FURTHER OBSERVATION` vs `CASE CLOSED`) untuk penanganan dini kendala belajar.
+    *   **Remedial Database Audit**: Verifikasi log perbaikan nilai siswa di database, membandingkan nilai sebelum dan sesudah remidi.
+*   **Output Dashboard**: Tampilan profil holistik siswa (Student 360 View), status peminjaman kursus, panel tracking kasus follow-up, list data persetujuan rapor rombel, dan log audit remedial.
+*   **AI Engine (System Integrity & Student Operations Audit)**: Pemicuan manual Gemini untuk menganalisis data kualitatif catatan siswa, mendeteksi siswa bermasalah (terjebak status observasi lama), dan mengaudit integritas relasi foreign key dari riwayat remidi siswa.
 
 ---
 
