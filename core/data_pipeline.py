@@ -11,10 +11,11 @@ import numpy as np
 import re
 import streamlit as st
 import logging
+import pymysql
 from typing import Dict, List, Any, Optional
 from config.settings import (
     SPREADSHEET_ID, SPREADSHEET_URL, SERVICE_ACCOUNT_PATH, SHEET_NAMES,
-    ERROR_PATTERNS, DATA_TYPE_MAPPINGS
+    ERROR_PATTERNS, DATA_TYPE_MAPPINGS, MARIADB_CONFIG
 )
 
 # Setup logging
@@ -348,3 +349,101 @@ def test_connection() -> bool:
     except Exception as e:
         print(f"Connection test failed: {str(e)}")
         return False
+
+def generate_mock_mariadb_data() -> Dict[str, pd.DataFrame]:
+    """Menghasilkan mock data realistis untuk Siswa dan Hubungannya."""
+    siswa_df = pd.DataFrame([
+        {"id_siswa": 1, "nis": "2601001", "nama_lengkap": "Medina Novi Mareta", "status_siswa": "Aktif"},
+        {"id_siswa": 2, "nis": "2601002", "nama_lengkap": "Nuzula Naura Dhuha", "status_siswa": "Aktif"},
+        {"id_siswa": 3, "nis": "2601003", "nama_lengkap": "Yasuke Natalio", "status_siswa": "Aktif"},
+        {"id_siswa": 4, "nis": "2601004", "nama_lengkap": "Dava Valecio Santoso", "status_siswa": "Keluar"}
+    ])
+    
+    kursus_siswa_df = pd.DataFrame([
+        {"id_siswa": 1, "nama_kursus": "Bahasa Inggris", "status_keaktifan": "Aktif", "status_kelulusan": "Belum Lulus"},
+        {"id_siswa": 2, "nama_kursus": "Bahasa Inggris", "status_keaktifan": "Aktif", "status_kelulusan": "Belum Lulus"},
+        {"id_siswa": 3, "nama_kursus": "Digital/Komputer", "status_keaktifan": "Aktif", "status_kelulusan": "Lulus"},
+        {"id_siswa": 4, "nama_kursus": "Komputer", "status_keaktifan": "Non-Aktif", "status_kelulusan": "Belum Lulus"}
+    ])
+
+    jadwal_siswa_df = pd.DataFrame([
+        {"id_siswa": 1, "rombel": "01 GOGO 1 SK1", "status_keluar": 0, "is_acc_rapor": 1, "status_ketuntasan": "Tuntas"},
+        {"id_siswa": 2, "rombel": "01 GOGO 1 SK1", "status_keluar": 0, "is_acc_rapor": 0, "status_ketuntasan": "Belum Tuntas"},
+        {"id_siswa": 3, "rombel": "02 GOGO 1 SK2", "status_keluar": 0, "is_acc_rapor": 1, "status_ketuntasan": "Tuntas"},
+        {"id_siswa": 4, "rombel": "Ing-02 GOGO 1 SK2", "status_keluar": 1, "is_acc_rapor": 0, "status_ketuntasan": "Belum Tuntas"}
+    ])
+
+    catatan_siswa_df = pd.DataFrame([
+        {"id_siswa": 2, "catatan": "Siswa kesulitan memahami materi listening.", "status_followup": "NEED FURTHER OBSERVATION"},
+        {"id_siswa": 4, "catatan": "Siswa sering bolos karena tabrakan jadwal les bola.", "status_followup": "CASE CLOSED"}
+    ])
+
+    catatan_remidi_siswa_df = pd.DataFrame([
+        {"id_siswa": 2, "nilai_sebelum": 55, "nilai_sesudah": 70, "persetujuan_guru": "Approved"}
+    ])
+
+    web_statistik_df = pd.DataFrame([
+        {"id_web_statistik": 1, "ip_address": "192.168.1.10", "page_views": 4, "visitor_session": "sess_01", "created_at": "2026-06-14 08:00:00"},
+        {"id_web_statistik": 2, "ip_address": "192.168.1.15", "page_views": 10, "visitor_session": "sess_02", "created_at": "2026-06-14 08:15:00"}
+    ])
+
+    return {
+        "siswa": siswa_df,
+        "kursus_siswa": kursus_siswa_df,
+        "jadwal_siswa": jadwal_siswa_df,
+        "catatan_siswa": catatan_siswa_df,
+        "catatan_remidi_siswa": catatan_remidi_siswa_df,
+        "web_statistik": web_statistik_df
+    }
+
+def load_mariadb_data() -> Dict[str, pd.DataFrame]:
+    """Membaca data siswa dan relasinya dari MariaDB port 3077, atau fallback ke Mock jika gagal."""
+    try:
+        connection = pymysql.connect(
+            host=MARIADB_CONFIG['host'],
+            port=MARIADB_CONFIG['port'],
+            user=MARIADB_CONFIG['user'],
+            password=MARIADB_CONFIG['password'],
+            database=MARIADB_CONFIG['database'],
+            cursorclass=pymysql.cursors.DictCursor,
+            connect_timeout=3
+        )
+        try:
+            with connection.cursor() as cursor:
+                # Ambil tabel siswa
+                cursor.execute("SELECT * FROM siswa")
+                siswa = pd.DataFrame(cursor.fetchall())
+                
+                # Ambil tabel kursus_siswa
+                cursor.execute("SELECT * FROM kursus_siswa")
+                kursus_siswa = pd.DataFrame(cursor.fetchall())
+
+                # Ambil tabel jadwal_siswa
+                cursor.execute("SELECT * FROM jadwal_siswa")
+                jadwal_siswa = pd.DataFrame(cursor.fetchall())
+
+                # Ambil tabel catatan_siswa
+                cursor.execute("SELECT * FROM catatan_siswa")
+                catatan_siswa = pd.DataFrame(cursor.fetchall())
+
+                # Ambil tabel catatan_remidi_siswa
+                cursor.execute("SELECT * FROM catatan_remidi_siswa")
+                catatan_remidi_siswa = pd.DataFrame(cursor.fetchall())
+
+                # Ambil tabel web_statistik
+                cursor.execute("SELECT * FROM web_statistik")
+                web_statistik = pd.DataFrame(cursor.fetchall())
+
+                return {
+                    "siswa": siswa,
+                    "kursus_siswa": kursus_siswa,
+                    "jadwal_siswa": jadwal_siswa,
+                    "catatan_siswa": catatan_siswa,
+                    "catatan_remidi_siswa": catatan_remidi_siswa,
+                    "web_statistik": web_statistik
+                }
+        finally:
+            connection.close()
+    except Exception as e:
+        logger.warning(f"Database connection failed ({str(e)}). Falling back to mock data engine.")
+        return generate_mock_mariadb_data()
