@@ -8,6 +8,13 @@ from core.llm_analyzer import analyze_security, generate_security_recommendation
 from core.charts import create_attendance_chart, create_score_distribution, create_web_page_views_chart, create_web_traffic_timeline
 from config.settings import DASHBOARD_CONFIG, SPREADSHEET_URL
 
+# --- PAGE CONFIG ---
+st.set_page_config(
+    page_title=DASHBOARD_CONFIG['title'],
+    page_icon="🛡️",
+    layout="wide"
+)
+
 # --- LOAD STYLING ---
 def local_css(file_name):
     with open(file_name) as f:
@@ -16,6 +23,58 @@ def local_css(file_name):
 local_css("styles/style.css")
 
 # --- INITIALIZE SESSION STATE ---
+@st.cache_data(ttl=60)
+def check_connection_statuses():
+    # Check sheets
+    sheets_ok = False
+    try:
+        from core.data_pipeline import authenticate_google_sheets, _open_spreadsheet
+        client = authenticate_google_sheets()
+        _open_spreadsheet(client)
+        sheets_ok = True
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Status check - Google Sheets failed: {e}")
+        
+    # Check db
+    db_ok = False
+    try:
+        import pymysql
+        from config.settings import MARIADB_CONFIG
+        conn = pymysql.connect(
+            host=MARIADB_CONFIG['host'],
+            port=MARIADB_CONFIG['port'],
+            user=MARIADB_CONFIG['user'],
+            password=MARIADB_CONFIG['password'],
+            database=MARIADB_CONFIG['database'],
+            connect_timeout=1
+        )
+        conn.close()
+        db_ok = True
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Status check - DB failed: {e}")
+        
+    return sheets_ok, db_ok
+
+# --- SIDEBAR DEBUG ---
+def display_sidebar_debug(cleaned_data):
+    st.sidebar.subheader("🛠️ Debug Center")
+    with st.sidebar.expander("🔍 Gemini Models", expanded=False):
+        try:
+            api_key = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
+            if api_key:
+                from google import genai
+                client = genai.Client(api_key=api_key)
+                models = [m.name for m in client.models.list() if 'generateContent' in m.supported_generation_methods]
+                st.json({"status": "Connected", "models": models})
+        except Exception as e:
+            st.json({"status": "Error", "message": str(e)})
+
+    with st.sidebar.expander("📊 Data Inventory", expanded=False):
+        inventory = {sheet: {"rows": len(df), "cols": len(df.columns)} for sheet, df in cleaned_data.items()}
+        st.json(inventory)
+
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 if 'selected_source' not in st.session_state:
@@ -34,37 +93,56 @@ if not st.session_state.logged_in:
             st.markdown('<h2 style="text-align: center; font-family: General Sans, sans-serif; font-weight: 700; margin-top: 0; margin-bottom: 5px;">EduDecision AI</h2>', unsafe_allow_html=True)
             st.markdown('<p style="text-align: center; color: var(--text-color); opacity: 0.7; font-size: 14px; margin-bottom: 20px;">Sistem Analisis Keputusan LKP LEAP</p>', unsafe_allow_html=True)
             
-            # 100% Synced Status Box
+            # Get real statuses
+            sheets_ok, db_ok = check_connection_statuses()
+            
+            percentage_text = "100% READY" if (sheets_ok and db_ok) else ("50% PARTIAL" if (sheets_ok or db_ok) else "DISCONNECTED")
+            percentage_class = " " if (sheets_ok and db_ok) else (" partial" if (sheets_ok or db_ok) else " disconnected")
+            progress_width = "100%" if (sheets_ok and db_ok) else ("50%" if (sheets_ok or db_ok) else "10%")
+            progress_class = " " if (sheets_ok and db_ok) else (" partial" if (sheets_ok or db_ok) else " disconnected")
+            
+            sheets_badge = "Online" if sheets_ok else "Offline"
+            sheets_badge_class = "connected" if sheets_ok else "disconnected"
+            sheets_card_class = "connected" if sheets_ok else "disconnected"
+            sheets_meta = "● 5 Sheets Synced" if sheets_ok else "● Connection Error"
+            sheets_meta_class = "connected" if sheets_ok else "disconnected"
+            
+            db_badge = "Online" if db_ok else "Offline"
+            db_badge_class = "connected" if db_ok else "disconnected"
+            db_card_class = "connected" if db_ok else "disconnected"
+            db_meta = "● Active Logs OK" if db_ok else "● Using Mock Data"
+            db_meta_class = "connected" if db_ok else "disconnected"
+            
             st.markdown(
-                '<div class="genesis-sync-wrapper">'
-                '<div class="genesis-sync-header">'
-                '<span class="genesis-sync-title">Status Sinkronisasi Data</span>'
-                '<span class="genesis-sync-percentage">100% READY</span>'
-                '</div>'
-                '<div class="genesis-sync-progress-track">'
-                '<div class="genesis-sync-progress-bar" style="width: 100%;"></div>'
-                '</div>'
-                '<div class="genesis-sync-grid">'
-                '<div class="genesis-sync-card connected">'
-                '<div class="genesis-sync-card-header">'
-                '<span class="genesis-sync-card-icon">📊</span>'
-                '<span class="genesis-sync-card-status-badge connected">Online</span>'
-                '</div>'
-                '<div class="genesis-sync-card-title">Google Sheets</div>'
-                '<div class="genesis-sync-card-desc">Absensi & Nilai</div>'
-                '<div class="genesis-sync-card-meta connected">● 5 Sheets Synced</div>'
-                '</div>'
-                '<div class="genesis-sync-card connected">'
-                '<div class="genesis-sync-card-header">'
-                '<span class="genesis-sync-card-icon">🗄️</span>'
-                '<span class="genesis-sync-card-status-badge connected">Online</span>'
-                '</div>'
-                '<div class="genesis-sync-card-title">Database SQL</div>'
-                '<div class="genesis-sync-card-desc">Statistik Website</div>'
-                '<div class="genesis-sync-card-meta connected">● Active Logs OK</div>'
-                '</div>'
-                '</div>'
-                '</div>',
+                f'<div class="genesis-sync-wrapper">'
+                f'<div class="genesis-sync-header">'
+                f'<span class="genesis-sync-title">Status Sinkronisasi Data</span>'
+                f'<span class="genesis-sync-percentage{percentage_class}">{percentage_text}</span>'
+                f'</div>'
+                f'<div class="genesis-sync-progress-track">'
+                f'<div class="genesis-sync-progress-bar{progress_class}" style="width: {progress_width};"></div>'
+                f'</div>'
+                f'<div class="genesis-sync-grid">'
+                f'<div class="genesis-sync-card {sheets_card_class}">'
+                f'<div class="genesis-sync-card-header">'
+                f'<span class="genesis-sync-card-icon">📊</span>'
+                f'<span class="genesis-sync-card-status-badge {sheets_badge_class}">{sheets_badge}</span>'
+                f'</div>'
+                f'<div class="genesis-sync-card-title">Google Sheets</div>'
+                f'<div class="genesis-sync-card-desc">Absensi & Nilai</div>'
+                f'<div class="genesis-sync-card-meta {sheets_meta_class}">{sheets_meta}</div>'
+                f'</div>'
+                f'<div class="genesis-sync-card {db_card_class}">'
+                f'<div class="genesis-sync-card-header">'
+                f'<span class="genesis-sync-card-icon">🗄️</span>'
+                f'<span class="genesis-sync-card-status-badge {db_badge_class}">{db_badge}</span>'
+                f'</div>'
+                f'<div class="genesis-sync-card-title">Database SQL</div>'
+                f'<div class="genesis-sync-card-desc">Statistik Website</div>'
+                f'<div class="genesis-sync-card-meta {db_meta_class}">{db_meta}</div>'
+                f'</div>'
+                f'</div>'
+                f'</div>',
                 unsafe_allow_html=True
             )
             
@@ -154,6 +232,7 @@ if st.session_state.selected_source == 'google_sheets':
             raw_data = load_all_data()
             cleaned_data = clean_all_data(raw_data)
             quality_report = get_data_quality_report(cleaned_data)
+            display_sidebar_debug(cleaned_data)
         except Exception as e:
             st.error(f"Gagal memuat API Google Sheets: {str(e)}")
             st.stop()
@@ -179,7 +258,15 @@ if st.session_state.selected_source == 'google_sheets':
             fig_attendance = create_attendance_chart(cleaned_data["DATA_ABSENSI"])
             st.plotly_chart(fig_attendance, use_container_width=True)
 
-    # AI Section
+    st.markdown("---")
+    st.subheader("🔍 Data Preview (Direct Access)")
+    display_map = {k: k.replace('DATA_', '').title() for k in cleaned_data.keys()}
+    reverse_map = {v: k for k, v in display_map.items()}
+    options = list(display_map.values())
+    default_idx = options.index("Master") if "Master" in options else 0
+    selected_display = st.selectbox("Pilih Tabel:", options, index=default_idx)
+    selected_real_key = reverse_map[selected_display]
+    st.dataframe(cleaned_data[selected_real_key], use_container_width=True, height=400)
     st.markdown("---")
     if st.button("🤖 Jalankan Analisis AI Absensi & Nilai", type="primary"):
         st.session_state.run_analysis = True
@@ -197,6 +284,7 @@ else:
 
     with st.spinner("Sinkronisasi database SQL..."):
         db_data = load_mariadb_data()
+        display_sidebar_debug(db_data)
 
     # Calculate SQL web statistik metrics
     web_df = db_data.get("web_statistik", pd.DataFrame())
