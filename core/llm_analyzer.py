@@ -85,17 +85,38 @@ Tugas:
 2. Rekomendasikan tindakan pencegahan ketidakhadiran berulang.
 """
 
-def get_churn_prompt(dataframes: dict) -> str:
-    """Generate prompt template for churn analysis."""
+def get_student_predictor_prompt(dataframes: dict) -> str:
+    """Generate prompt template for student predictor and overall student health analysis."""
+    siswa_df = dataframes.get("DATA_SISWA", pd.DataFrame())
+    nilai_df = dataframes.get("DATA_NILAI", pd.DataFrame())
+    absensi_df = dataframes.get("DATA_ABSENSI", pd.DataFrame())
     keluar_df = dataframes.get("DATA_KELUAR", pd.DataFrame())
-    data_str = f"Data Siswa Keluar (Sample):\n{keluar_df.to_string(index=False)}" if not keluar_df.empty else "Data kosong."
-    return f"""Kamu adalah Retention & Churn Analyst LKP LEAP.
-Analisis data siswa keluar berikut:
-{data_str}
+    
+    siswa_str = f"Data Siswa (Sample 20):\n{siswa_df.head(20).to_string(index=False)}" if not siswa_df.empty else "Data kosong."
+    nilai_str = f"Data Nilai (Sample 20):\n{nilai_df.head(20).to_string(index=False)}" if not nilai_df.empty else "Data kosong."
+    absensi_str = f"Data Absensi (Sample 20):\n{absensi_df.head(20).to_string(index=False)}" if not absensi_df.empty else "Data kosong."
+    keluar_str = f"Data Siswa Keluar (Sample 20):\n{keluar_df.head(20).to_string(index=False)}" if not keluar_df.empty else "Data kosong."
+    
+    return f"""Kamu adalah Senior Student Success Specialist & Predictor LKP LEAP Surabaya.
+Tugasmu adalah menganalisis seluruh aspek terkait siswa (kehadiran, prestasi akademik/nilai, hambatan belajar, serta potensi siswa keluar/churn) secara menyeluruh.
+
+Data Input (Sample):
+--- DATA SISWA ---
+{siswa_str}
+
+--- DATA NILAI ---
+{nilai_str}
+
+--- DATA ABSENSI ---
+{absensi_str}
+
+--- DATA SISWA KELUAR ---
+{keluar_str}
 
 Tugas:
-1. Identifikasi penyebab utama siswa keluar (churn).
-2. Rekomendasikan perbaikan administratif dan retensi untuk menurunkan angka churn.
+1. **Analisis Kondisi Akademik & Keaktifan**: Evaluasi sebaran nilai siswa dan hubungannya dengan pola kehadiran mereka.
+2. **Prediksi Kendala Belajar & Risiko**: Identifikasi siswa yang berisiko mengalami hambatan belajar (nilai remedi) atau berisiko berhenti les (churn) berdasarkan data historis siswa keluar dan pola absensi/nilai.
+3. **Rekomendasi Dukungan Siswa Terpadu**: Berikan usulan konkret untuk membantu siswa meningkatkan performa akademiknya, mencegah ketidakhadiran, meningkatkan motivasi, serta meminimalkan angka dropout secara preventif.
 """
 
 def get_rombel_prompt(db_data: dict) -> str:
@@ -137,6 +158,39 @@ Tugas:
 2. Audit persetujuan guru (ACC) untuk nilai remedial dan identifikasi penyimpangan jika ada.
 """
 
+def get_unified_overview_prompt(combined_data: dict) -> str:
+    """Generate prompt template for Unified LKP Overview analysis."""
+    sheets_data = combined_data.get("sheets", {})
+    db_data = combined_data.get("db", {})
+    
+    total_siswa = len(sheets_data.get("DATA_SISWA", []))
+    nilai_df = sheets_data.get("DATA_NILAI", pd.DataFrame())
+    avg_final = 71.60
+    if not nilai_df.empty:
+        final_df = nilai_df[nilai_df["periode"] == "Final"]
+        if not final_df.empty:
+            avg_final = final_df["score"].mean()
+            
+    siswa_df = db_data.get("siswa", pd.DataFrame())
+    total_active = len(siswa_df[siswa_df["status_siswa"] == "Aktif"]) if not siswa_df.empty else 0
+    catatan_df = db_data.get("catatan_siswa", pd.DataFrame())
+    cases_count = len(catatan_df[catatan_df["status_followup"] == "NEED FURTHER OBSERVATION"]) if not catatan_df.empty else 0
+    
+    return f"""Kamu adalah Principal Educational Director & Executive Auditor LKP LEAP Surabaya.
+Analisis data kinerja institusi LKP LEAP berikut secara menyeluruh (gabungan data akademik Sheets dan operasional Database):
+
+[RINGKASAN EKSEKUTIF]
+- Total Siswa Terdaftar (Sheets): {total_siswa}
+- Siswa Aktif (Database): {total_active}
+- Rata-rata Nilai Akhir Siswa: {avg_final:.2f}
+- Jumlah Kasus Observasi CS Terbuka: {cases_count}
+
+Tugas:
+1. Berikan evaluasi kinerja makro LKP LEAP yang memadukan data akademik (keberhasilan nilai) dan data operasional (kondisi CS/staf pendukung).
+2. Identifikasi apakah ada kendala koordinasi atau penurunan retensi siswa secara makro.
+3. Berikan 3 rekomendasi taktis eksekutif untuk meningkatkan kualitas layanan pendidikan dan operasional LKP LEAP.
+"""
+
 def analyze_feature(dataframes: dict, feature_key: str) -> str:
     """Melakukan analisis AI spesifik untuk fitur tertentu."""
     api_key = get_api_key()
@@ -146,9 +200,10 @@ def analyze_feature(dataframes: dict, feature_key: str) -> str:
     client = genai.Client(api_key=api_key)
     
     prompt_map = {
+        "unified_overview": (get_unified_overview_prompt, "Kamu adalah Executive Auditor LKP LEAP. Sajikan analisis eksekutif secara objektif dan ringkas. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda."),
         "academic_perf": (get_academic_performance_prompt, "Kamu adalah Asisten Analisis Performa Akademik LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda."),
         "attendance": (get_attendance_prompt, "Kamu adalah Asisten Analisis Kehadiran Siswa LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda."),
-        "churn": (get_churn_prompt, "Kamu adalah Asisten Analisis Retensi & Churn LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda."),
+        "student_predictor": (get_student_predictor_prompt, "Kamu adalah Senior Student Success Specialist & Predictor LKP LEAP. Sajikan analisis kesehatan siswa, prediksi risiko, dan rekomendasi dukungan secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda."),
         "rombel": (get_rombel_prompt, "Kamu adalah Asisten Analisis Operasional Kelas LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda."),
         "cs_cases": (get_cs_cases_prompt, "Kamu adalah Asisten Analisis Layanan CS & Konseling LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda."),
         "remedial_audit": (get_remedial_audit_prompt, "Kamu adalah Asisten Auditor Remedial Akademik LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda.")
