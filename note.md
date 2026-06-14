@@ -2,8 +2,6 @@
 
 # 📋 LEAP Security Dashboard - Setup & Usage Guide
 
-> [!NOTE] tekan _Ctrl+Shift+V_ untuk preview
-
 ## 🎯 Project Overview
 
 **LEAP Security Dashboard** adalah aplikasi Streamlit untuk analisis keamanan data LKP LEAP yang terintegrasi dengan Google Sheets dan Google Gemini AI. Dashboard ini fokus pada monitoring keamanan data siswa, analisis absensi, dan deteksi anomali menggunakan AI.
