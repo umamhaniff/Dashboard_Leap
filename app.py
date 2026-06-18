@@ -9,7 +9,9 @@ from core.charts import (
     create_attendance_chart, create_score_distribution, create_web_page_views_chart, 
     create_web_traffic_timeline, create_absence_reasons_chart, 
     create_grade_distribution_chart, create_dropout_reasons_chart, 
-    create_rombel_distribution_chart
+    create_rombel_distribution_chart, create_marketing_funnel,
+    create_parent_income_chart, create_teacher_compliance_chart,
+    create_late_attendance_chart, create_sales_velocity_chart
 )
 from config.settings import DASHBOARD_CONFIG, SPREADSHEET_URL
 
@@ -208,10 +210,10 @@ elif st.session_state.selected_source == 'google_sheets':
     }
 else:
     features = {
-        "👤 Student 360 View": "student_360",
-        "🏫 Rombel & Persetujuan Rapor": "rombel",
-        "🔍 Kasus Observasi (CS)": "cs_cases",
-        "📝 Audit Remedial": "remedial_audit",
+        "🎯 Marketing & Front Office": "marketing",
+        "🏫 Academic & Teaching Compliance": "academic_compliance",
+        "👥 HR & Attendance Executive": "hr_attendance",
+        "💰 Revenue Sales Pipeline": "revenue_pipeline",
         "🔍 Data Preview (Database SQL)": "preview_sql"
     }
 
@@ -803,182 +805,143 @@ elif st.session_state.selected_source == 'google_sheets':
         st.dataframe(cleaned_data[selected_real_key], use_container_width=True, height=400)
 
 else:
-    # --- MODUL B: DATABASE SQL (PROFIL & RELASI SISWA) ---
-    st.markdown('<h1 class="genesis-hero-display">Database SQL: Profil & Relasi Siswa</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="genesis-tagline">Log profil terpadu siswa (Student 360), rombongan belajar, and kasus follow-up LKP LEAP.</p>', unsafe_allow_html=True)
+    # --- MODUL B: DATABASE SQL (DASHBOARD BI EKSEKUTIF) ---
+    st.markdown('<h1 class="genesis-hero-display">Database SQL: Dashboard BI Eksekutif</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="genesis-tagline">Analisis cerdas data akademik, rekrutmen pendaftaran, kehadiran SDM, dan alur keuangan LKP LEAP.</p>', unsafe_allow_html=True)
 
     with st.spinner("Sinkronisasi database SQL..."):
         db_data = load_mariadb_data()
         display_sidebar_debug(db_data)
 
     # Extract DataFrames
-    siswa_df = db_data.get("siswa", pd.DataFrame())
-    kursus_siswa_df = db_data.get("kursus_siswa", pd.DataFrame())
-    jadwal_siswa_df = db_data.get("jadwal_siswa", pd.DataFrame())
-    catatan_siswa_df = db_data.get("catatan_siswa", pd.DataFrame())
-    catatan_remidi_siswa_df = db_data.get("catatan_remidi_siswa", pd.DataFrame())
+    calon_siswa_df = db_data.get("calon_siswa", pd.DataFrame())
+    calon_siswa_akademik_df = db_data.get("calon_siswa_akademik", pd.DataFrame())
+    calon_siswa_bayar_df = db_data.get("calon_siswa_bayar", pd.DataFrame())
+    calon_siswa_ortu_df = db_data.get("calon_siswa_ortu", pd.DataFrame())
+    calon_siswa_fo_detail_df = db_data.get("calon_siswa_fo_detail", pd.DataFrame())
+    
+    jadwal_df = db_data.get("jadwal", pd.DataFrame())
+    jadwal_detail_df = db_data.get("jadwal_detail", pd.DataFrame())
+    catatan_kelas_df = db_data.get("catatan_kelas", pd.DataFrame())
+    
+    absensi_df = db_data.get("absensi", pd.DataFrame())
+    izin_karyawan_df = db_data.get("izin_karyawan", pd.DataFrame())
+    verifikasi_izin_df = db_data.get("verifikasi_izin", pd.DataFrame())
+    
+    web_statistik_df = db_data.get("web_statistik", pd.DataFrame())
 
     # Compute KPIs
-    total_active = len(siswa_df[siswa_df["status_siswa"] == "Aktif"]) if not siswa_df.empty else 0
-    total_rombel = 0
-    rapor_acc_pct = 0.0
-    cases_count = 0
-
-    if not jadwal_siswa_df.empty:
-        total_rombel = int(jadwal_siswa_df["rombel"].nunique())
-        acc_count = int(jadwal_siswa_df["is_acc_rapor"].sum())
-        rapor_acc_pct = (acc_count / len(jadwal_siswa_df)) * 100 if len(jadwal_siswa_df) > 0 else 0.0
-
-    if not catatan_siswa_df.empty:
-        cases_count = len(catatan_siswa_df[catatan_siswa_df["status_followup"] == "NEED FURTHER OBSERVATION"])
+    total_leads = len(calon_siswa_df) if not calon_siswa_df.empty else 0
+    
+    total_revenue = 0.0
+    if not calon_siswa_bayar_df.empty:
+        total_revenue = float(calon_siswa_bayar_df["jumlah_bayar"].sum())
+        
+    compliance_rate = 100.0
+    if not jadwal_detail_df.empty:
+        total_sessions = len(jadwal_detail_df)
+        recorded_details = set(catatan_kelas_df["id_jadwal_detail"].dropna()) if not catatan_kelas_df.empty else set()
+        recorded_sessions = jadwal_detail_df["id_jadwal_detail"].isin(recorded_details).sum()
+        compliance_rate = (recorded_sessions / total_sessions) * 100 if total_sessions > 0 else 100.0
+        
+    late_ratio = 0.0
+    if not absensi_df.empty:
+        late_count = len(absensi_df[absensi_df["status_absensi"] == "Terlambat"])
+        late_ratio = (late_count / len(absensi_df)) * 100
 
     # Metrics
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Siswa Aktif (Database)", f"{total_active}")
-    c2.metric("Rombel Aktif", f"{total_rombel}")
-    c3.metric("Persetujuan Rapor", f"{rapor_acc_pct:.1f}%")
-    c4.metric("Kasus Observasi", f"{cases_count}")
+    c1.metric("Total Calon Siswa (Leads)", f"{total_leads}")
+    c2.metric("Total Pendapatan Kotor", f"Rp {total_revenue:,.0f}")
+    c3.metric("Kepatuhan Jurnal Guru", f"{compliance_rate:.1f}%")
+    c4.metric("Rasio Keterlambatan SDM", f"{late_ratio:.1f}%")
     
     st.markdown("---")
 
-    if st.session_state.selected_feature == "student_360":
-        st.markdown("### 👤 Student 360 View")
-        if siswa_df.empty:
-            st.info("Data siswa kosong.")
-        else:
-            student_list = siswa_df["nama_lengkap"].tolist()
-            selected_student_name = st.selectbox("Pilih nama siswa untuk detail 360:", student_list)
+    if st.session_state.selected_feature == "marketing":
+        st.markdown("### 🎯 Dashboard Rekrutmen & Pemasaran (Marketing & FO)")
+        col1, col2 = st.columns(2)
+        with col1:
+            fig_funnel = create_marketing_funnel(calon_siswa_df, calon_siswa_bayar_df)
+            st.plotly_chart(fig_funnel, use_container_width=True)
+        with col2:
+            fig_ortu = create_parent_income_chart(calon_siswa_ortu_df)
+            st.plotly_chart(fig_ortu, use_container_width=True)
             
-            # Get student details
-            student_row = siswa_df[siswa_df["nama_lengkap"] == selected_student_name].iloc[0]
-            id_siswa = student_row["id_siswa"]
-            
-            col_det1, col_det2 = st.columns(2)
-            with col_det1:
-                st.markdown(
-                    f'<div class="genesis-futuristic-card">'
-                    f'<h4>Profil Siswa</h4>'
-                    f'<ul>'
-                    f'<li><b>Nama Lengkap:</b> {student_row["nama_lengkap"]}</li>'
-                    f'<li><b>NIS:</b> {student_row["nis"]}</li>'
-                    f'<li><b>ID Siswa:</b> {student_row["id_siswa"]}</li>'
-                    f'<li><b>Status Keaktifan:</b> {student_row["status_siswa"]}</li>'
-                    f'</ul>'
-                    f'</div>',
-                    unsafe_allow_html=True
-                )
-                
-            with col_det2:
-                # Active courses
-                if not kursus_siswa_df.empty:
-                    s_courses = kursus_siswa_df[kursus_siswa_df["id_siswa"] == id_siswa]
-                    courses_text = "".join([f"<li>{row['nama_kursus']} - {row['status_keaktifan']} ({row['status_kelulusan']})</li>" for _, row in s_courses.iterrows()]) if not s_courses.empty else "<li>Tidak ada kursus terdaftar</li>"
-                    st.markdown(
-                        f'<div class="genesis-futuristic-card">'
-                        f'<h4>Peminjaman Program & Kursus</h4>'
-                        f'<ul>{courses_text}</ul>'
-                        f'</div>',
-                        unsafe_allow_html=True
-                    )
-            
-            col_det3, col_det4 = st.columns(2)
-            with col_det3:
-                # Class & Schedule
-                if not jadwal_siswa_df.empty:
-                    s_schedule = jadwal_siswa_df[jadwal_siswa_df["id_siswa"] == id_siswa]
-                    schedule_text = "".join([f"<li>Rombel: {row['rombel']} | Rapor: {'Disetujui' if row['is_acc_rapor'] == 1 else 'Pending'} | Ketuntasan: {row['status_ketuntasan']}</li>" for _, row in s_schedule.iterrows()]) if not s_schedule.empty else "<li>Tidak ada rombel terdaftar</li>"
-                    st.markdown(
-                        f'<div class="genesis-futuristic-card">'
-                        f'<h4>Rombel & Status Akademik</h4>'
-                        f'<ul>{schedule_text}</ul>'
-                        f'</div>',
-                        unsafe_allow_html=True
-                    )
-            with col_det4:
-                # Behavior / Case logs
-                if not catatan_siswa_df.empty:
-                    s_cases = catatan_siswa_df[catatan_siswa_df["id_siswa"] == id_siswa]
-                    cases_text = "".join([f"<li>Catatan: {row['catatan']} | Status: {row['status_followup']}</li>" for _, row in s_cases.iterrows()]) if not s_cases.empty else "<li>Tidak ada catatan observasi</li>"
-                    st.markdown(
-                        f'<div class="genesis-futuristic-card">'
-                        f'<h4>Catatan Perkembangan (Observasi CS)</h4>'
-                        f'<ul>{cases_text}</ul>'
-                        f'</div>',
-                        unsafe_allow_html=True
-                    )
-            
-            st.markdown("---")
-            if st.button(f"🤖 Hubungi AI Konsultan Pendidikan untuk {selected_student_name}", type="primary"):
-                st.session_state.run_analysis = True
-                
-            if st.session_state.run_analysis:
-                with st.spinner(f"Gemini sedang memproses Student 360 untuk {selected_student_name}..."):
-                    student_info = {
-                        "profil": student_row.to_dict(),
-                        "kursus": kursus_siswa_df[kursus_siswa_df["id_siswa"] == id_siswa] if not kursus_siswa_df.empty else pd.DataFrame(),
-                        "jadwal": jadwal_siswa_df[jadwal_siswa_df["id_siswa"] == id_siswa] if not jadwal_siswa_df.empty else pd.DataFrame(),
-                        "catatan": catatan_siswa_df[catatan_siswa_df["id_siswa"] == id_siswa] if not catatan_siswa_df.empty else pd.DataFrame()
-                    }
-                    st.session_state.analysis_result = analyze_student_profile(selected_student_name, student_info)
-                render_ai_panel_with_download(f"💡 Konsultasi AI Siswa: {selected_student_name}", st.session_state.analysis_result)
-
-    elif st.session_state.selected_feature == "rombel":
-        st.markdown("### 🏫 Distribusi Rombel & Persetujuan Rapor")
-        col_r1, col_r2 = st.columns(2)
-        with col_r1:
-            if not jadwal_siswa_df.empty:
-                fig_rombel = create_rombel_distribution_chart(jadwal_siswa_df)
-                st.plotly_chart(fig_rombel, use_container_width=True)
-        with col_r2:
-            if not jadwal_siswa_df.empty:
-                st.markdown("#### Status Persetujuan Rapor")
-                acc_df = jadwal_siswa_df["is_acc_rapor"].value_counts().reset_index()
-                acc_df.columns = ["is_acc_rapor", "count"]
-                acc_df["status"] = acc_df["is_acc_rapor"].apply(lambda x: "Disetujui" if x == 1 else "Pending (Perlu Persetujuan)")
-                st.dataframe(acc_df[["status", "count"]], use_container_width=True)
-                
         st.markdown("---")
-        if st.button("🤖 Jalankan Audit AI Operasional Kelas & Rapor", type="primary"):
+        if st.button("🤖 Jalankan Analisis AI Pemasaran & Konversi Leads", type="primary"):
             st.session_state.run_analysis = True
             
         if st.session_state.run_analysis:
-            with st.spinner("Gemini sedang mengaudit operasional kelas dan rapor..."):
-                st.session_state.analysis_result = analyze_feature(db_data, "rombel")
-            render_ai_panel_with_download("💡 Hasil Audit AI Rombel & Rapor", st.session_state.analysis_result)
+            with st.spinner("Gemini sedang menganalisis performa rekrutmen..."):
+                st.session_state.analysis_result = analyze_feature(db_data, "marketing")
+            render_ai_panel_with_download("💡 Hasil Analisis AI Pemasaran & Konversi", st.session_state.analysis_result)
 
-    elif st.session_state.selected_feature == "cs_cases":
-        st.markdown("### 🔍 Kasus Observasi Siswa (CRM/CS)")
-        if catatan_siswa_df.empty:
-            st.write("Tidak ada kasus observasi siswa.")
-        else:
-            merged_cases = catatan_siswa_df.merge(siswa_df, on="id_siswa", how="left")
-            st.dataframe(merged_cases[["nama_lengkap", "catatan", "status_followup"]], use_container_width=True)
-            
+    elif st.session_state.selected_feature == "academic_compliance":
+        st.markdown("### 🏫 Dashboard Kepatuhan & Produktivitas Mengajar")
+        col1, col2 = st.columns(2)
+        with col1:
+            fig_comp = create_teacher_compliance_chart(jadwal_detail_df, catatan_kelas_df)
+            st.plotly_chart(fig_comp, use_container_width=True)
+        with col2:
+            st.markdown("#### Distribusi Program Rombel Aktif")
+            if not jadwal_df.empty:
+                st.dataframe(jadwal_df[["nama_rombel", "metode_belajar_jadwal", "tempat"]], use_container_width=True, height=250)
+            else:
+                st.info("Data rombel kosong.")
+                
         st.markdown("---")
-        if st.button("🤖 Jalankan Analisis AI Kasus CS & Layanan Konseling", type="primary"):
+        if st.button("🤖 Jalankan Audit AI Kepatuhan Mengajar & Rombel", type="primary"):
             st.session_state.run_analysis = True
             
         if st.session_state.run_analysis:
-            with st.spinner("Gemini sedang menganalisis kasus CS..."):
-                st.session_state.analysis_result = analyze_feature(db_data, "cs_cases")
-            render_ai_panel_with_download("💡 Hasil Analisis AI Kasus CS", st.session_state.analysis_result)
+            with st.spinner("Gemini sedang mengaudit kepatuhan laporan kelas..."):
+                st.session_state.analysis_result = analyze_feature(db_data, "academic_compliance")
+            render_ai_panel_with_download("💡 Hasil Audit AI Kepatuhan Mengajar", st.session_state.analysis_result)
 
-    elif st.session_state.selected_feature == "remedial_audit":
-        st.markdown("### 📝 Audit Remedial Database")
-        if catatan_remidi_siswa_df.empty:
-            st.write("Tidak ada log remedial siswa.")
-        else:
-            merged_remidi = catatan_remidi_siswa_df.merge(siswa_df, on="id_siswa", how="left")
-            st.dataframe(merged_remidi[["nama_lengkap", "nilai_sebelum", "nilai_sesudah", "persetujuan_guru"]], use_container_width=True)
-            
+    elif st.session_state.selected_feature == "hr_attendance":
+        st.markdown("### 👥 Dashboard Kedisiplinan & Manajemen SDM (HR)")
+        col1, col2 = st.columns(2)
+        with col1:
+            fig_late = create_late_attendance_chart(absensi_df)
+            st.plotly_chart(fig_late, use_container_width=True)
+        with col2:
+            st.markdown("#### Pengajuan Izin Staf Aktif")
+            if not izin_karyawan_df.empty:
+                st.dataframe(izin_karyawan_df[["jenis_izin", "tanggal_mulai", "tanggal_selesai", "keterangan_izin"]], use_container_width=True, height=250)
+            else:
+                st.info("Tidak ada data izin diajukan.")
+                
         st.markdown("---")
-        if st.button("🤖 Jalankan Audit AI Log Remedial Akademik", type="primary"):
+        if st.button("🤖 Jalankan Analisis AI Kedisiplinan & Presensi SDM", type="primary"):
             st.session_state.run_analysis = True
             
         if st.session_state.run_analysis:
-            with st.spinner("Gemini sedang mengaudit data remedial..."):
-                st.session_state.analysis_result = analyze_feature(db_data, "remedial_audit")
-            render_ai_panel_with_download("💡 Hasil Audit AI Remedial", st.session_state.analysis_result)
+            with st.spinner("Gemini sedang menganalisis presensi karyawan..."):
+                st.session_state.analysis_result = analyze_feature(db_data, "hr_attendance")
+            render_ai_panel_with_download("💡 Hasil Analisis AI Presensi & HR", st.session_state.analysis_result)
+
+    elif st.session_state.selected_feature == "revenue_pipeline":
+        st.markdown("### 💰 Dashboard Keuangan & Siklus Penjualan")
+        col1, col2 = st.columns(2)
+        with col1:
+            fig_vel = create_sales_velocity_chart(calon_siswa_df, calon_siswa_bayar_df, calon_siswa_akademik_df)
+            st.plotly_chart(fig_vel, use_container_width=True)
+        with col2:
+            st.markdown("#### Detail Transaksi Pembayaran Prospek")
+            if not calon_siswa_bayar_df.empty:
+                st.dataframe(calon_siswa_bayar_df[["nomor_invoice", "bank_pembayaran", "tanggal_konfirmasi_bayar", "jumlah_bayar"]], use_container_width=True, height=250)
+            else:
+                st.info("Tidak ada catatan transaksi masuk.")
+                
+        st.markdown("---")
+        if st.button("🤖 Jalankan Analisis AI Alur Pendapatan & Siklus Penjualan", type="primary"):
+            st.session_state.run_analysis = True
+            
+        if st.session_state.run_analysis:
+            with st.spinner("Gemini sedang menganalisis arus kas masuk..."):
+                st.session_state.analysis_result = analyze_feature(db_data, "revenue_pipeline")
+            render_ai_panel_with_download("💡 Hasil Analisis AI Alur Pendapatan", st.session_state.analysis_result)
 
     elif st.session_state.selected_feature == "preview_sql":
         st.markdown("### 🔍 Data Preview (Database Tables)")

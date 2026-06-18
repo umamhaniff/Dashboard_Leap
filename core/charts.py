@@ -517,3 +517,119 @@ def create_rombel_distribution_chart(df_jadwal: pd.DataFrame) -> go.Figure:
     apply_genesis_theme(fig, "Distribusi Siswa per Rombel", "Jumlah Siswa", "Rombel")
     fig.update_layout(height=max(300, len(counts) * 25))
     return fig
+
+def create_marketing_funnel(df_calon: pd.DataFrame, df_bayar: pd.DataFrame) -> go.Figure:
+    """Create marketing funnel from calon_siswa and calon_siswa_bayar."""
+    total_leads = len(df_calon) if not df_calon.empty else 0
+    total_paid = df_bayar["id_calon_akademik"].nunique() if not df_bayar.empty else 0
+    
+    stages = ["Total leads (Calon)", "Siswa Bayar (Konversi)"]
+    values = [total_leads, total_paid]
+    
+    fig = go.Figure(go.Funnel(
+        y=stages,
+        x=values,
+        textinfo="value+percent initial",
+        marker=dict(color=["#6366F1", "#10B981"])
+    ))
+    
+    apply_genesis_theme(fig, "Corong Konversi Pemasaran (Funnel)", "Jumlah", "")
+    return fig
+
+def create_parent_income_chart(df_ortu: pd.DataFrame) -> go.Figure:
+    """Create bar chart of father/mother income distribution."""
+    if df_ortu.empty or "penghasilan_ayah" not in df_ortu.columns:
+        fig = go.Figure()
+        fig.add_annotation(text="Data penghasilan orang tua kosong", showarrow=False)
+        return fig
+        
+    counts = df_ortu["penghasilan_ayah"].value_counts().reset_index()
+    counts.columns = ["income", "count"]
+    
+    fig = go.Figure(go.Bar(
+        x=counts["income"],
+        y=counts["count"],
+        marker_color="#06B6D4",
+        hovertemplate='<b>Penghasilan: %{x}</b><br>Jumlah: %{y} orang<extra></extra>'
+    ))
+    
+    apply_genesis_theme(fig, "Segmentasi Sosio-Ekonomi (Penghasilan Ayah)", "Tingkat Penghasilan", "Jumlah")
+    return fig
+
+def create_teacher_compliance_chart(df_detail: pd.DataFrame, df_catatan: pd.DataFrame) -> go.Figure:
+    """Create compliance chart: percentage of sessions with catatan_kelas."""
+    if df_detail.empty:
+        fig = go.Figure()
+        fig.add_annotation(text="Data detail jadwal kosong", showarrow=False)
+        return fig
+        
+    if df_catatan.empty:
+        compliance_rate = 0.0
+        recorded_sessions = 0
+        total_sessions = len(df_detail)
+    else:
+        recorded_details = set(df_catatan["id_jadwal_detail"].dropna())
+        total_sessions = len(df_detail)
+        recorded_sessions = df_detail["id_jadwal_detail"].isin(recorded_details).sum()
+        compliance_rate = (recorded_sessions / total_sessions) * 100 if total_sessions > 0 else 0.0
+        
+    fig = go.Figure(go.Pie(
+        labels=["Sudah Isi Laporan", "Belum Isi Laporan"],
+        values=[recorded_sessions, total_sessions - recorded_sessions],
+        hole=0.4,
+        marker=dict(colors=["#10B981", "#EF4444"])
+    ))
+    
+    apply_genesis_theme(fig, "Rasio Kepatuhan Laporan Mengajar Guru")
+    return fig
+
+def create_late_attendance_chart(df_absensi: pd.DataFrame) -> go.Figure:
+    """Create attendance status distribution (Tepat Waktu, Terlambat, Izin, Hadir)."""
+    if df_absensi.empty or "status_absensi" not in df_absensi.columns:
+        fig = go.Figure()
+        fig.add_annotation(text="Data absensi kosong", showarrow=False)
+        return fig
+        
+    counts = df_absensi["status_absensi"].value_counts().reset_index()
+    counts.columns = ["status", "count"]
+    
+    color_map = {"Tepat Waktu": "#10B981", "Terlambat": "#EF4444", "Izin": "#F59E0B", "Hadir": "#6366F1"}
+    colors = [color_map.get(s, "#8B5CF6") for s in counts["status"]]
+    
+    fig = go.Figure(go.Bar(
+        x=counts["status"],
+        y=counts["count"],
+        marker_color=colors,
+        hovertemplate='<b>Status: %{x}</b><br>Jumlah: %{y}<extra></extra>'
+    ))
+    
+    apply_genesis_theme(fig, "Distribusi Status Kehadiran Karyawan", "Status Absensi", "Jumlah")
+    return fig
+
+def create_sales_velocity_chart(df_calon: pd.DataFrame, df_bayar: pd.DataFrame, df_calon_akademik: pd.DataFrame) -> go.Figure:
+    """Analyze sales velocity: days from calon_siswa.created_at to payment."""
+    if df_calon.empty or df_bayar.empty or df_calon_akademik.empty:
+        fig = go.Figure()
+        fig.add_annotation(text="Data pendaftaran kurang lengkap", showarrow=False)
+        return fig
+        
+    c_df = df_calon[["id_calon", "created_at"]].copy()
+    ca_df = df_calon_akademik[["id_calon_akademik", "id_calon"]].copy()
+    merged = pd.merge(c_df, ca_df, on="id_calon")
+    
+    pay_df = df_bayar[["id_calon_akademik", "tanggal_konfirmasi_bayar"]].copy()
+    final_df = pd.merge(merged, pay_df, on="id_calon_akademik")
+    
+    final_df["created_at"] = pd.to_datetime(final_df["created_at"])
+    final_df["tanggal_konfirmasi_bayar"] = pd.to_datetime(final_df["tanggal_konfirmasi_bayar"])
+    final_df["days_to_pay"] = (final_df["tanggal_konfirmasi_bayar"] - final_df["created_at"]).dt.days
+    
+    fig = go.Figure(go.Histogram(
+        x=final_df["days_to_pay"],
+        marker_color="#EC4899",
+        nbinsx=10,
+        hovertemplate='<b>Kecepatan Bayar %{x} Hari</b><br>Jumlah: %{y} pendaftar<extra></extra>'
+    ))
+    
+    apply_genesis_theme(fig, "Distribusi Siklus Penjualan (Sales Velocity)", "Durasi Konversi (Hari)", "Jumlah Calon Siswa")
+    return fig

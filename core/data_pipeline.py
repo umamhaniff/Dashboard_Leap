@@ -433,45 +433,45 @@ def generate_mock_mariadb_data() -> Dict[str, pd.DataFrame]:
     ])
 
     calon_siswa_df = pd.DataFrame([
-        {"id_calon_siswa": 1, "nama_calon_siswa": "Budi Santoso", "provinsi": "Jawa Timur", "kabupaten": "Surabaya", "kecamatan": "Gubeng", "kelurahan": "Airlangga", "asal_sekolah": "SDN 1 Surabaya", "status_berkas": "Lengkap", "created_at": "2026-06-01 10:00:00"},
-        {"id_calon_siswa": 2, "nama_calon_siswa": "Siti Aminah", "provinsi": "Jawa Timur", "kabupaten": "Sidoarjo", "kecamatan": "Waru", "kelurahan": "Tropodo", "asal_sekolah": "SMPN 1 Sidoarjo", "status_berkas": "Belum Lengkap", "created_at": "2026-06-02 11:00:00"}
+        {"id_calon": 1, "kode_unik": "CS001", "nama_lengkap": "Budi Santoso", "id_provinsi": 1, "id_kabupaten": 1, "id_kecamatan": 1, "id_kelurahan": 1, "asal_sekolah": "SDN 1 Surabaya", "fo_status": "Lengkap", "created_at": "2026-06-01 10:00:00"},
+        {"id_calon": 2, "kode_unik": "CS002", "nama_lengkap": "Siti Aminah", "id_provinsi": 1, "id_kabupaten": 2, "id_kecamatan": 2, "id_kelurahan": 2, "asal_sekolah": "SMPN 1 Sidoarjo", "fo_status": "Belum Lengkap", "created_at": "2026-06-02 11:00:00"}
     ])
 
     calon_siswa_akademik_df = pd.DataFrame([
-        {"id_calon_siswa_akademik": 1, "id_calon_siswa": 1, "id_kursus": 1, "id_level": 1, "periode": "Batch 1"},
-        {"id_calon_siswa_akademik": 2, "id_calon_siswa": 2, "id_kursus": 2, "id_level": 2, "periode": "Batch 1"}
+        {"id_calon_akademik": 1, "id_calon": 1, "nama_sekolah": "SDN 1 Surabaya", "id_kursus": 1, "id_level": 1, "submission_state": "submitted", "sumber_info": "Instagram", "referensi": "Teman"},
+        {"id_calon_akademik": 2, "id_calon": 2, "nama_sekolah": "SMPN 1 Sidoarjo", "id_kursus": 2, "id_level": 2, "submission_state": "submitted", "sumber_info": "Website", "referensi": "Instagram"}
     ])
 
     calon_siswa_bayar_df = pd.DataFrame([
-        {"id_calon_siswa_bayar": 1, "id_calon_siswa": 1, "jumlah_bayar": 500000.0, "status_bayar": "Lunas", "tanggal_bayar": "2026-06-05"},
-        {"id_calon_siswa_bayar": 2, "id_calon_siswa": 2, "jumlah_bayar": 250000.0, "status_bayar": "Cicilan 1", "tanggal_bayar": "2026-06-06"}
+        {"id_calon_bayar": 1, "id_calon_akademik": 1, "nomor_invoice": "INV/001", "bank_pembayaran": "BCA", "tanggal_konfirmasi_bayar": "2026-06-05 09:00:00", "jumlah_bayar": 500000.0},
+        {"id_calon_bayar": 2, "id_calon_akademik": 2, "nomor_invoice": "INV/002", "bank_pembayaran": "Mandiri", "tanggal_konfirmasi_bayar": "2026-06-06 10:00:00", "jumlah_bayar": 250000.0}
     ])
 
     calon_siswa_ortu_df = pd.DataFrame([
-        {"id_calon_siswa_ortu": 1, "id_calon_siswa": 1, "nama_ortu": "Bambang", "pekerjaan": "Swasta", "penghasilan": "5000000"},
-        {"id_calon_siswa_ortu": 2, "id_calon_siswa": 2, "nama_ortu": "Joko", "pekerjaan": "PNS", "penghasilan": "7000000"}
+        {"id_calon_ortu": 1, "id_calon": 1, "nama_ayah": "Bambang", "pekerjaan_ayah": "Swasta", "penghasilan_ayah": "3jt_5jt", "nama_ibu": "Siti", "pekerjaan_ibu": "IRT", "penghasilan_ibu": "kurang_1jt"},
+        {"id_calon_ortu": 2, "id_calon": 2, "nama_ayah": "Joko", "pekerjaan_ayah": "PNS", "penghasilan_ayah": "lebih_5jt", "nama_ibu": "Ani", "pekerjaan_ibu": "Swasta", "penghasilan_ibu": "1jt_3jt"}
     ])
 
     calon_siswa_fo_detail_df = pd.DataFrame([
-        {"id_calon_siswa_fo_detail": 1, "id_calon_siswa": 1, "catatan_followup": "Tertarik dengan Coding Class"},
-        {"id_calon_siswa_fo_detail": 2, "id_calon_siswa": 2, "catatan_followup": "Masih mempertimbangkan jadwal"}
+        {"id": 1, "id_calon": 1, "nama_lengkap": "Budi Santoso", "pilihan_program_snapshot": "[]", "catatan_awal_fo": "Tertarik dengan Coding Class"},
+        {"id": 2, "id_calon": 2, "nama_lengkap": "Siti Aminah", "pilihan_program_snapshot": "[]", "catatan_awal_fo": "Masih mempertimbangkan jadwal"}
     ])
 
     catatan_kelas_df = pd.DataFrame([
-        {"id_catatan_kelas": 1, "id_jadwal_detail": 1, "id_karyawan": 2, "topik_diskusi": "Introduction to Python", "kemajuan_siswa": "Siswa memahami tipe data dasar"}
+        {"id_ck": 1, "id_jadwal": 1, "id_jadwal_detail": 1, "id_karyawan": 2, "catatan_kelas": "Introduction to Python", "topik_diskusi": "Variables and Types"}
     ])
 
     absensi_df = pd.DataFrame([
-        {"id_absensi": 1, "id_karyawan": 2, "jam_masuk": "08:00:00", "jam_keluar": "17:00:00", "tipe_absensi": "Fingerprint", "catatan_kerja": "WFO", "status_keterlambatan": "Tepat Waktu", "id_izin": None},
-        {"id_absensi": 2, "id_karyawan": 3, "jam_masuk": "08:15:00", "jam_keluar": "17:00:00", "tipe_absensi": "Fingerprint", "catatan_kerja": "WFO", "status_keterlambatan": "Terlambat", "id_izin": None}
+        {"id_absensi": 1, "id_karyawan": 2, "tanggal": "2026-06-15", "jam_masuk": "08:00:00", "jam_keluar": "17:00:00", "status_absensi": "Tepat Waktu", "tipe_absensi": "Fingerprint", "id_izin": None},
+        {"id_absensi": 2, "id_karyawan": 3, "tanggal": "2026-06-15", "jam_masuk": "08:15:00", "jam_keluar": "17:00:00", "status_absensi": "Terlambat", "tipe_absensi": "Fingerprint", "id_izin": None}
     ])
 
     izin_karyawan_df = pd.DataFrame([
-        {"id_izin": 1, "id_karyawan": 2, "tanggal_izin": "2026-06-10", "alasan": "Sakit", "status_persetujuan": "Approved"}
+        {"id_izin": 1, "id_karyawan": 2, "jenis_izin": "Sakit", "tanggal_mulai": "2026-06-10", "tanggal_selesai": "2026-06-11", "keterangan_izin": "Sakit demam"}
     ])
 
     verifikasi_izin_df = pd.DataFrame([
-        {"id_verifikasi": 1, "id_izin": 1, "status_verifikasi": "Verified", "diverifikasi_oleh": 1}
+        {"id_verifikasi_izin": 1, "id_izin": 1, "status_verifikasi_izin": "Approved", "catatan_verifikator": "Verified"}
     ])
 
     return {

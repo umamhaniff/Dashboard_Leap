@@ -1,7 +1,7 @@
 from core.llm_analyzer import (
     get_academic_prompt, get_operations_prompt,
     get_academic_performance_prompt, get_attendance_prompt, get_student_predictor_prompt,
-    get_rombel_prompt, get_cs_cases_prompt, get_remedial_audit_prompt
+    get_marketing_prompt, get_academic_compliance_prompt, get_hr_attendance_prompt, get_revenue_pipeline_prompt
 )
 
 def test_prompts():
@@ -10,7 +10,8 @@ def test_prompts():
     assert "Academic" in get_academic_performance_prompt({})
     assert "absensi" in get_attendance_prompt({})
     assert "siswa" in get_student_predictor_prompt({}).lower()
-    assert "rombel" in get_rombel_prompt({})
-    assert "CS" in get_cs_cases_prompt({})
-    assert "remedial" in get_remedial_audit_prompt({})
+    assert "rekrutmen" in get_marketing_prompt({}).lower()
+    assert "kepatuhan" in get_academic_compliance_prompt({}).lower()
+    assert "karyawan" in get_hr_attendance_prompt({}).lower()
+    assert "pendapatan" in get_revenue_pipeline_prompt({}).lower()
 

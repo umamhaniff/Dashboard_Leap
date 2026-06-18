@@ -119,43 +119,106 @@ Tugas:
 3. **Rekomendasi Dukungan Siswa Terpadu**: Berikan usulan konkret untuk membantu siswa meningkatkan performa akademiknya, mencegah ketidakhadiran, meningkatkan motivasi, serta meminimalkan angka dropout secara preventif.
 """
 
-def get_rombel_prompt(db_data: dict) -> str:
-    """Generate prompt template for rombel analysis."""
-    jadwal_df = db_data.get("jadwal_siswa", pd.DataFrame())
-    data_str = f"Data Rombel & Rapor (Sample):\n{jadwal_df.head(50).to_string(index=False)}" if not jadwal_df.empty else "Data kosong."
+def get_marketing_prompt(db_data: dict) -> str:
+    """Generate prompt template for Marketing & FO analysis."""
+    calon_df = db_data.get("calon_siswa", pd.DataFrame())
+    bayar_df = db_data.get("calon_siswa_bayar", pd.DataFrame())
+    ortu_df = db_data.get("calon_siswa_ortu", pd.DataFrame())
+    
+    calon_str = f"Data Calon Siswa (Sample):\n{calon_df.head(20).to_string(index=False)}" if not calon_df.empty else "Data calon kosong."
+    bayar_str = f"Data Pembayaran Calon (Sample):\n{bayar_df.head(20).to_string(index=False)}" if not bayar_df.empty else "Data bayar kosong."
+    ortu_str = f"Data Orang Tua Calon (Sample):\n{ortu_df.head(20).to_string(index=False)}" if not ortu_df.empty else "Data ortu kosong."
+    
+    return f"""Kamu adalah Marketing & Front Office Analyst LKP LEAP.
+Analisis data rekrutmen calon siswa berikut:
+
+--- DATA CALON SISWA ---
+{calon_str}
+
+--- DATA PEMBAYARAN ---
+{bayar_str}
+
+--- DATA SOSIO-EKONOMI ORANG TUA ---
+{ortu_str}
+
+Tugas:
+1. Evaluasi tingkat konversi leads (calon siswa menjadi siswa bayar).
+2. Analisis saluran akuisisi pemasaran terpopuler (referensi/sumber info) dan segmentasi domisili daerah pendaftar.
+3. Rekomendasikan strategi promosi/pemasaran taktis berdasarkan profil sosio-ekonomi orang tua.
+"""
+
+def get_academic_compliance_prompt(db_data: dict) -> str:
+    """Generate prompt template for Academic & Teaching Compliance analysis."""
+    jadwal_df = db_data.get("jadwal", pd.DataFrame())
+    detail_df = db_data.get("jadwal_detail", pd.DataFrame())
+    catatan_df = db_data.get("catatan_kelas", pd.DataFrame())
+    
+    jadwal_str = f"Data Jadwal Rombel (Sample):\n{jadwal_df.head(20).to_string(index=False)}" if not jadwal_df.empty else "Data rombel kosong."
+    detail_str = f"Data Detail Pertemuan (Sample):\n{detail_df.head(20).to_string(index=False)}" if not detail_df.empty else "Data pertemuan kosong."
+    catatan_str = f"Data Jurnal Catatan Kelas (Sample):\n{catatan_df.head(20).to_string(index=False)}" if not catatan_df.empty else "Data jurnal kosong."
+    
     return f"""Kamu adalah Academic Operations Auditor LKP LEAP.
-Analisis data rombel dan persetujuan rapor berikut:
-{data_str}
+Analisis produktivitas guru dan kepatuhan administrasi akademik berikut:
+
+--- MASTER JADWAL ROMBEL ---
+{jadwal_str}
+
+--- DETAIL PERTEMUAN AKTUAL ---
+{detail_str}
+
+--- JURNAL HARIAN GURU ---
+{catatan_str}
 
 Tugas:
-1. Evaluasi efisiensi rombel (kelas) dan sebaran status persetujuan (ACC) rapor.
-2. Identifikasi rombel yang masih pending persetujuannya dan rekomendasikan percepatan approval.
+1. Evaluasi utilisasi kelas dan program kursus yang paling diminati.
+2. Analisis rasio kepatuhan guru dalam mengisi jurnal laporan kelas pasca-mengajar (apakah ada sesi kelas berjalan yang tidak memiliki catatan kelas).
+3. Berikan rekomendasi operasional untuk optimalisasi penjadwalan kelas dan peningkatan kepatuhan laporan mengajar guru.
 """
 
-def get_cs_cases_prompt(db_data: dict) -> str:
-    """Generate prompt template for CS cases analysis."""
-    catatan_df = db_data.get("catatan_siswa", pd.DataFrame())
-    data_str = f"Data Kasus CS (Sample):\n{catatan_df.head(50).to_string(index=False)}" if not catatan_df.empty else "Data kosong."
-    return f"""Kamu adalah Customer Relationship & Student Care Auditor LKP LEAP.
-Analisis data catatan kasus perkembangan siswa berikut:
-{data_str}
+def get_hr_attendance_prompt(db_data: dict) -> str:
+    """Generate prompt template for HR & Employee Attendance analysis."""
+    absensi_df = db_data.get("absensi", pd.DataFrame())
+    izin_df = db_data.get("izin_karyawan", pd.DataFrame())
+    
+    absensi_str = f"Data Presensi Harian Karyawan (Sample):\n{absensi_df.head(20).to_string(index=False)}" if not absensi_df.empty else "Data presensi kosong."
+    izin_str = f"Data Pengajuan Izin Karyawan (Sample):\n{izin_df.head(20).to_string(index=False)}" if not izin_df.empty else "Data izin kosong."
+    
+    return f"""Kamu adalah HR & Attendance Analyst LKP LEAP.
+Analisis kedisiplinan dan manajemen kapasitas staf karyawan berikut:
+
+--- DATA PRESENSI HARIAN ---
+{absensi_str}
+
+--- PENGAJUAN IZIN/DISPENSASI ---
+{izin_str}
 
 Tugas:
-1. Identifikasi kasus-kasus kritis siswa yang memerlukan observasi lebih lanjut (CS follow-up).
-2. Tentukan prioritas penanganan dan berikan usulan tindakan mitigasi untuk tim CS.
+1. Evaluasi rasio keterlambatan karyawan dan identifikasi divisi/staf yang sering terlambat.
+2. Analisis durasi jam kerja efektif dan tren pengajuan izin staf.
+3. Rekomendasikan tindakan mitigasi HR untuk meningkatkan kedisiplinan kerja staf dan perencanaan kapasitas tim.
 """
 
-def get_remedial_audit_prompt(db_data: dict) -> str:
-    """Generate prompt template for remedial audit analysis."""
-    remidi_df = db_data.get("catatan_remidi_siswa", pd.DataFrame())
-    data_str = f"Data Log Remedial (Sample):\n{remidi_df.head(50).to_string(index=False)}" if not remidi_df.empty else "Data kosong."
-    return f"""Kamu adalah Quality Assurance Academic Auditor LKP LEAP.
-Analisis data audit remedial berikut:
-{data_str}
+def get_revenue_pipeline_prompt(db_data: dict) -> str:
+    """Generate prompt template for Revenue Sales Pipeline analysis."""
+    bayar_df = db_data.get("calon_siswa_bayar", pd.DataFrame())
+    calon_df = db_data.get("calon_siswa", pd.DataFrame())
+    
+    bayar_str = f"Data Invoice & Konfirmasi Bayar (Sample):\n{bayar_df.head(20).to_string(index=False)}" if not bayar_df.empty else "Data pembayaran kosong."
+    calon_str = f"Data Milestone Calon (Sample):\n{calon_df.head(20).to_string(index=False)}" if not calon_df.empty else "Data calon kosong."
+    
+    return f"""Kamu adalah Revenue Sales Specialist LKP LEAP.
+Analisis kesehatan alur pendapatan kursus baru berikut:
+
+--- TRANSAKSI PEMBAYARAN ---
+{bayar_str}
+
+--- MILESTONE PENDAFTARAN ---
+{calon_str}
 
 Tugas:
-1. Evaluasi kenaikan nilai pasca remedial (perbandingan nilai sebelum vs sesudah).
-2. Audit persetujuan guru (ACC) untuk nilai remedial dan identifikasi penyimpangan jika ada.
+1. Hitung total nominal pendapatan kotor dari pendaftaran kursus baru.
+2. Analisis kecepatan siklus konversi penjualan (sales velocity) dari pembuatan prospek hingga pembayaran pertama terkonfirmasi.
+3. Rekomendasikan strategi keuangan/pembayaran untuk meminimalkan piutang tak tertagih dan mempercepat arus kas masuk (cash inflow).
 """
 
 def get_unified_overview_prompt(combined_data: dict) -> str:
@@ -204,9 +267,10 @@ def analyze_feature(dataframes: dict, feature_key: str) -> str:
         "academic_perf": (get_academic_performance_prompt, "Kamu adalah Asisten Analisis Performa Akademik LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda."),
         "attendance": (get_attendance_prompt, "Kamu adalah Asisten Analisis Kehadiran Siswa LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda."),
         "student_predictor": (get_student_predictor_prompt, "Kamu adalah Senior Student Success Specialist & Predictor LKP LEAP. Sajikan analisis kesehatan siswa, prediksi risiko, dan rekomendasi dukungan secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda."),
-        "rombel": (get_rombel_prompt, "Kamu adalah Asisten Analisis Operasional Kelas LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda."),
-        "cs_cases": (get_cs_cases_prompt, "Kamu adalah Asisten Analisis Layanan CS & Konseling LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda."),
-        "remedial_audit": (get_remedial_audit_prompt, "Kamu adalah Asisten Auditor Remedial Akademik LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda.")
+        "marketing": (get_marketing_prompt, "Kamu adalah Asisten Analisis Pemasaran LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda."),
+        "academic_compliance": (get_academic_compliance_prompt, "Kamu adalah Asisten Analisis Kepatuhan Akademik LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda."),
+        "hr_attendance": (get_hr_attendance_prompt, "Kamu adalah Asisten Analisis Kehadiran & HR LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda."),
+        "revenue_pipeline": (get_revenue_pipeline_prompt, "Kamu adalah Asisten Analisis Finansial Pendapatan LKP LEAP. Sajikan data, temuan, dan rekomendasi secara objektif. Jangan pernah mengajukan pertanyaan di akhir tanggapan Anda.")
     }
     
     if feature_key not in prompt_map:
