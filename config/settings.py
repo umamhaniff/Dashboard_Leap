@@ -80,10 +80,10 @@ SHEET_NAMES = _streamlit_secrets.get('sheet_names', [
 # MariaDB Connection settings
 MARIADB_CONFIG = {
     'host': _streamlit_secrets.get('mariadb_host', 'localhost'),
-    'port': int(_streamlit_secrets.get('mariadb_port', 3077)),
+    'port': int(_streamlit_secrets.get('mariadb_port', 3307)),
     'user': _streamlit_secrets.get('mariadb_user', 'root'),
     'password': _streamlit_secrets.get('mariadb_password', ''),
-    'database': _streamlit_secrets.get('mariadb_database', 'dataleap_v5_migration')
+    'database': _streamlit_secrets.get('mariadb_database', 'dataleap_v5_finish')
 }
 
 # GCP Project ID (optional)

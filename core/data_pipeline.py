@@ -351,7 +351,7 @@ def test_connection() -> bool:
         return False
 
 def generate_mock_mariadb_data() -> Dict[str, pd.DataFrame]:
-    """Menghasilkan mock data realistis untuk Siswa dan Hubungannya."""
+    """Menghasilkan mock data realistis untuk Siswa, Akademik, Absensi, dan Hubungannya."""
     siswa_df = pd.DataFrame([
         {"id_siswa": 1, "nis": "2601001", "nama_lengkap": "Medina Novi Mareta", "status_siswa": "Aktif"},
         {"id_siswa": 2, "nis": "2601002", "nama_lengkap": "Nuzula Naura Dhuha", "status_siswa": "Aktif"},
@@ -387,17 +387,122 @@ def generate_mock_mariadb_data() -> Dict[str, pd.DataFrame]:
         {"id_web_statistik": 2, "ip_address": "192.168.1.15", "page_views": 10, "visitor_session": "sess_02", "created_at": "2026-06-14 08:15:00"}
     ])
 
+    users_df = pd.DataFrame([
+        {"id_user": 1, "username": "admin1", "nama_karyawan": "Admin One", "email": "admin1@leap.com"},
+        {"id_user": 2, "username": "guru1", "nama_karyawan": "Guru One", "email": "guru1@leap.com"}
+    ])
+
+    divisions_df = pd.DataFrame([
+        {"id_divisi": 1, "nama_divisi": "Akademik"},
+        {"id_divisi": 2, "nama_divisi": "FO"}
+    ])
+
+    division_user_df = pd.DataFrame([
+        {"id_division_user": 1, "id_user": 1, "id_divisi": 1, "id_role": 1},
+        {"id_division_user": 2, "id_user": 2, "id_divisi": 2, "id_role": 2}
+    ])
+
+    kursus_df = pd.DataFrame([
+        {"id_kursus": 1, "nama_kursus": "Coding Class"},
+        {"id_kursus": 2, "nama_kursus": "English Program"}
+    ])
+
+    kursus_level_df = pd.DataFrame([
+        {"id_kursus_level": 1, "id_kursus": 1, "nama_level": "Basic"},
+        {"id_kursus_level": 2, "id_kursus": 2, "nama_level": "Gogo 1"}
+    ])
+
+    rapor_level_config_df = pd.DataFrame([
+        {"id_rapor_level_config": 1, "id_kursus_level": 1, "format_penilaian": "Format A"},
+        {"id_rapor_level_config": 2, "id_kursus_level": 2, "format_penilaian": "Format B"}
+    ])
+
+    jadwal_df = pd.DataFrame([
+        {"id_jadwal": 1, "id_kursus": 1, "id_level": 1, "nama_kelas": "Coding Level 1", "periode": "Batch 1"},
+        {"id_jadwal": 2, "id_kursus": 2, "id_level": 2, "nama_kelas": "English Gogo 1", "periode": "Batch 1"}
+    ])
+
+    jadwal_hari_df = pd.DataFrame([
+        {"id_jadwal_hari": 1, "id_jadwal": 1, "hari": "Senin"},
+        {"id_jadwal_hari": 2, "id_jadwal": 2, "hari": "Rabu"}
+    ])
+
+    jadwal_detail_df = pd.DataFrame([
+        {"id_jadwal_detail": 1, "id_jadwal": 1, "tanggal": "2026-06-15", "zoom_link": "https://zoom.us/j/123", "status_pengerjaan": "Selesai"},
+        {"id_jadwal_detail": 2, "id_jadwal": 2, "tanggal": "2026-06-17", "zoom_link": "https://zoom.us/j/456", "status_pengerjaan": "Selesai"}
+    ])
+
+    calon_siswa_df = pd.DataFrame([
+        {"id_calon_siswa": 1, "nama_calon_siswa": "Budi Santoso", "provinsi": "Jawa Timur", "kabupaten": "Surabaya", "kecamatan": "Gubeng", "kelurahan": "Airlangga", "asal_sekolah": "SDN 1 Surabaya", "status_berkas": "Lengkap", "created_at": "2026-06-01 10:00:00"},
+        {"id_calon_siswa": 2, "nama_calon_siswa": "Siti Aminah", "provinsi": "Jawa Timur", "kabupaten": "Sidoarjo", "kecamatan": "Waru", "kelurahan": "Tropodo", "asal_sekolah": "SMPN 1 Sidoarjo", "status_berkas": "Belum Lengkap", "created_at": "2026-06-02 11:00:00"}
+    ])
+
+    calon_siswa_akademik_df = pd.DataFrame([
+        {"id_calon_siswa_akademik": 1, "id_calon_siswa": 1, "id_kursus": 1, "id_level": 1, "periode": "Batch 1"},
+        {"id_calon_siswa_akademik": 2, "id_calon_siswa": 2, "id_kursus": 2, "id_level": 2, "periode": "Batch 1"}
+    ])
+
+    calon_siswa_bayar_df = pd.DataFrame([
+        {"id_calon_siswa_bayar": 1, "id_calon_siswa": 1, "jumlah_bayar": 500000.0, "status_bayar": "Lunas", "tanggal_bayar": "2026-06-05"},
+        {"id_calon_siswa_bayar": 2, "id_calon_siswa": 2, "jumlah_bayar": 250000.0, "status_bayar": "Cicilan 1", "tanggal_bayar": "2026-06-06"}
+    ])
+
+    calon_siswa_ortu_df = pd.DataFrame([
+        {"id_calon_siswa_ortu": 1, "id_calon_siswa": 1, "nama_ortu": "Bambang", "pekerjaan": "Swasta", "penghasilan": "5000000"},
+        {"id_calon_siswa_ortu": 2, "id_calon_siswa": 2, "nama_ortu": "Joko", "pekerjaan": "PNS", "penghasilan": "7000000"}
+    ])
+
+    calon_siswa_fo_detail_df = pd.DataFrame([
+        {"id_calon_siswa_fo_detail": 1, "id_calon_siswa": 1, "catatan_followup": "Tertarik dengan Coding Class"},
+        {"id_calon_siswa_fo_detail": 2, "id_calon_siswa": 2, "catatan_followup": "Masih mempertimbangkan jadwal"}
+    ])
+
+    catatan_kelas_df = pd.DataFrame([
+        {"id_catatan_kelas": 1, "id_jadwal_detail": 1, "id_karyawan": 2, "topik_diskusi": "Introduction to Python", "kemajuan_siswa": "Siswa memahami tipe data dasar"}
+    ])
+
+    absensi_df = pd.DataFrame([
+        {"id_absensi": 1, "id_karyawan": 2, "jam_masuk": "08:00:00", "jam_keluar": "17:00:00", "tipe_absensi": "Fingerprint", "catatan_kerja": "WFO", "status_keterlambatan": "Tepat Waktu", "id_izin": None},
+        {"id_absensi": 2, "id_karyawan": 3, "jam_masuk": "08:15:00", "jam_keluar": "17:00:00", "tipe_absensi": "Fingerprint", "catatan_kerja": "WFO", "status_keterlambatan": "Terlambat", "id_izin": None}
+    ])
+
+    izin_karyawan_df = pd.DataFrame([
+        {"id_izin": 1, "id_karyawan": 2, "tanggal_izin": "2026-06-10", "alasan": "Sakit", "status_persetujuan": "Approved"}
+    ])
+
+    verifikasi_izin_df = pd.DataFrame([
+        {"id_verifikasi": 1, "id_izin": 1, "status_verifikasi": "Verified", "diverifikasi_oleh": 1}
+    ])
+
     return {
         "siswa": siswa_df,
         "kursus_siswa": kursus_siswa_df,
         "jadwal_siswa": jadwal_siswa_df,
         "catatan_siswa": catatan_siswa_df,
         "catatan_remidi_siswa": catatan_remidi_siswa_df,
-        "web_statistik": web_statistik_df
+        "web_statistik": web_statistik_df,
+        "users": users_df,
+        "divisions": divisions_df,
+        "division_user": division_user_df,
+        "kursus": kursus_df,
+        "kursus_level": kursus_level_df,
+        "rapor_level_config": rapor_level_config_df,
+        "jadwal": jadwal_df,
+        "jadwal_hari": jadwal_hari_df,
+        "jadwal_detail": jadwal_detail_df,
+        "calon_siswa": calon_siswa_df,
+        "calon_siswa_akademik": calon_siswa_akademik_df,
+        "calon_siswa_bayar": calon_siswa_bayar_df,
+        "calon_siswa_ortu": calon_siswa_ortu_df,
+        "calon_siswa_fo_detail": calon_siswa_fo_detail_df,
+        "catatan_kelas": catatan_kelas_df,
+        "absensi": absensi_df,
+        "izin_karyawan": izin_karyawan_df,
+        "verifikasi_izin": verifikasi_izin_df
     }
 
 def load_mariadb_data() -> Dict[str, pd.DataFrame]:
-    """Membaca data siswa dan relasinya dari MariaDB port 3077, atau fallback ke Mock jika gagal."""
+    """Membaca data dari MariaDB atau fallback ke Mock jika gagal."""
     try:
         connection = pymysql.connect(
             host=MARIADB_CONFIG['host'],
@@ -410,42 +515,23 @@ def load_mariadb_data() -> Dict[str, pd.DataFrame]:
         )
         try:
             with connection.cursor() as cursor:
-                # Ambil tabel siswa
-                cursor.execute("SELECT * FROM siswa")
-                siswa = pd.DataFrame(cursor.fetchall())
+                tables = [
+                    "siswa", "kursus_siswa", "jadwal_siswa", "catatan_siswa", "catatan_remidi_siswa", "web_statistik",
+                    "users", "divisions", "division_user", "kursus", "kursus_level", "rapor_level_config", "jadwal",
+                    "jadwal_hari", "jadwal_detail", "calon_siswa", "calon_siswa_akademik", "calon_siswa_bayar",
+                    "calon_siswa_ortu", "calon_siswa_fo_detail", "catatan_kelas", "absensi", "izin_karyawan", "verifikasi_izin"
+                ]
                 
-                # Ambil tabel kursus_siswa
-                cursor.execute("SELECT * FROM kursus_siswa")
-                kursus_siswa = pd.DataFrame(cursor.fetchall())
+                result = {}
+                for table in tables:
+                    cursor.execute(f"SELECT * FROM `{table}`")
+                    result[table] = pd.DataFrame(cursor.fetchall())
 
-                # Ambil tabel jadwal_siswa
-                cursor.execute("SELECT * FROM jadwal_siswa")
-                jadwal_siswa = pd.DataFrame(cursor.fetchall())
-
-                # Ambil tabel catatan_siswa
-                cursor.execute("SELECT * FROM catatan_siswa")
-                catatan_siswa = pd.DataFrame(cursor.fetchall())
-
-                # Ambil tabel catatan_remidi_siswa
-                cursor.execute("SELECT * FROM catatan_remidi_siswa")
-                catatan_remidi_siswa = pd.DataFrame(cursor.fetchall())
-
-                # Ambil tabel web_statistik
-                cursor.execute("SELECT * FROM web_statistik")
-                web_statistik = pd.DataFrame(cursor.fetchall())
-
-                if siswa.empty:
+                if result["siswa"].empty:
                     logger.warning("Database connected but 'siswa' table is empty. Falling back to mock data engine.")
                     return generate_mock_mariadb_data()
 
-                return {
-                    "siswa": siswa,
-                    "kursus_siswa": kursus_siswa,
-                    "jadwal_siswa": jadwal_siswa,
-                    "catatan_siswa": catatan_siswa,
-                    "catatan_remidi_siswa": catatan_remidi_siswa,
-                    "web_statistik": web_statistik
-                }
+                return result
         finally:
             connection.close()
     except Exception as e:
