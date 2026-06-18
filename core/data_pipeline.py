@@ -353,29 +353,29 @@ def test_connection() -> bool:
 def generate_mock_mariadb_data() -> Dict[str, pd.DataFrame]:
     """Menghasilkan mock data realistis untuk Siswa, Akademik, Absensi, dan Hubungannya."""
     siswa_df = pd.DataFrame([
-        {"id_siswa": 1, "nis": "2601001", "nama_lengkap": "Medina Novi Mareta", "status_siswa": "Aktif"},
-        {"id_siswa": 2, "nis": "2601002", "nama_lengkap": "Nuzula Naura Dhuha", "status_siswa": "Aktif"},
-        {"id_siswa": 3, "nis": "2601003", "nama_lengkap": "Yasuke Natalio", "status_siswa": "Aktif"},
-        {"id_siswa": 4, "nis": "2601004", "nama_lengkap": "Dava Valecio Santoso", "status_siswa": "Keluar"}
+        {"id_siswa": 1, "nis": "2601001", "nomor_induk": "2601001", "nama_lengkap": "Medina Novi Mareta", "status_siswa": "Aktif", "status_pendaftaran": "Siswa Lama"},
+        {"id_siswa": 2, "nis": "2601002", "nomor_induk": "2601002", "nama_lengkap": "Nuzula Naura Dhuha", "status_siswa": "Aktif", "status_pendaftaran": "Siswa Baru"},
+        {"id_siswa": 3, "nis": "2601003", "nomor_induk": "2601003", "nama_lengkap": "Yasuke Natalio", "status_siswa": "Aktif", "status_pendaftaran": "Siswa Lama"},
+        {"id_siswa": 4, "nis": "2601004", "nomor_induk": "2601004", "nama_lengkap": "Dava Valecio Santoso", "status_siswa": "Keluar", "status_pendaftaran": ""}
     ])
     
     kursus_siswa_df = pd.DataFrame([
-        {"id_siswa": 1, "nama_kursus": "Bahasa Inggris", "status_keaktifan": "Aktif", "status_kelulusan": "Belum Lulus"},
-        {"id_siswa": 2, "nama_kursus": "Bahasa Inggris", "status_keaktifan": "Aktif", "status_kelulusan": "Belum Lulus"},
-        {"id_siswa": 3, "nama_kursus": "Digital/Komputer", "status_keaktifan": "Aktif", "status_kelulusan": "Lulus"},
-        {"id_siswa": 4, "nama_kursus": "Komputer", "status_keaktifan": "Non-Aktif", "status_kelulusan": "Belum Lulus"}
+        {"id_siswa": 1, "nama_kursus": "Bahasa Inggris", "status_keaktifan": "Aktif", "status_kelulusan": "Belum Lulus", "status_aktif": 1, "status_lulus": 0},
+        {"id_siswa": 2, "nama_kursus": "Bahasa Inggris", "status_keaktifan": "Aktif", "status_kelulusan": "Belum Lulus", "status_aktif": 1, "status_lulus": 0},
+        {"id_siswa": 3, "nama_kursus": "Digital/Komputer", "status_keaktifan": "Aktif", "status_kelulusan": "Lulus", "status_aktif": 1, "status_lulus": 1},
+        {"id_siswa": 4, "nama_kursus": "Komputer", "status_keaktifan": "Non-Aktif", "status_kelulusan": "Belum Lulus", "status_aktif": 0, "status_lulus": 0}
     ])
 
     jadwal_siswa_df = pd.DataFrame([
-        {"id_siswa": 1, "rombel": "01 GOGO 1 SK1", "status_keluar": 0, "is_acc_rapor": 1, "status_ketuntasan": "Tuntas"},
-        {"id_siswa": 2, "rombel": "01 GOGO 1 SK1", "status_keluar": 0, "is_acc_rapor": 0, "status_ketuntasan": "Belum Tuntas"},
-        {"id_siswa": 3, "rombel": "02 GOGO 1 SK2", "status_keluar": 0, "is_acc_rapor": 1, "status_ketuntasan": "Tuntas"},
-        {"id_siswa": 4, "rombel": "Ing-02 GOGO 1 SK2", "status_keluar": 1, "is_acc_rapor": 0, "status_ketuntasan": "Belum Tuntas"}
+        {"id_siswa": 1, "rombel": "01 GOGO 1 SK1", "id_jadwal": 1, "status_keluar": 0, "is_acc_rapor": 1, "status_ketuntasan": "Tuntas"},
+        {"id_siswa": 2, "rombel": "01 GOGO 1 SK1", "id_jadwal": 1, "status_keluar": 0, "is_acc_rapor": 0, "status_ketuntasan": "Belum Tuntas"},
+        {"id_siswa": 3, "rombel": "02 GOGO 1 SK2", "id_jadwal": 2, "status_keluar": 0, "is_acc_rapor": 1, "status_ketuntasan": "Tuntas"},
+        {"id_siswa": 4, "rombel": "Ing-02 GOGO 1 SK2", "id_jadwal": 2, "status_keluar": 1, "is_acc_rapor": 0, "status_ketuntasan": "Belum Tuntas"}
     ])
 
     catatan_siswa_df = pd.DataFrame([
-        {"id_siswa": 2, "catatan": "Siswa kesulitan memahami materi listening.", "status_followup": "NEED FURTHER OBSERVATION"},
-        {"id_siswa": 4, "catatan": "Siswa sering bolos karena tabrakan jadwal les bola.", "status_followup": "CASE CLOSED"}
+        {"id_siswa": 2, "catatan": "Siswa kesulitan memahami materi listening.", "catatan_cs": "Siswa kesulitan memahami materi listening.", "status_followup": "NEED FURTHER OBSERVATION"},
+        {"id_siswa": 4, "catatan": "Siswa sering bolos karena tabrakan jadwal les bola.", "catatan_cs": "Siswa sering bolos karena tabrakan jadwal les bola.", "status_followup": "CASE CLOSED"}
     ])
 
     catatan_remidi_siswa_df = pd.DataFrame([

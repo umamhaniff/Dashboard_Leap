@@ -235,9 +235,22 @@ def get_unified_overview_prompt(combined_data: dict) -> str:
             avg_final = final_df["score"].mean()
             
     siswa_df = db_data.get("siswa", pd.DataFrame())
-    total_active = len(siswa_df[siswa_df["status_siswa"] == "Aktif"]) if not siswa_df.empty else 0
+    total_active = 0
+    if not siswa_df.empty:
+        if "status_siswa" in siswa_df.columns:
+            total_active = len(siswa_df[siswa_df["status_siswa"] == "Aktif"])
+        elif "status_pendaftaran" in siswa_df.columns:
+            total_active = len(siswa_df[siswa_df["status_pendaftaran"].isin(["Siswa Baru", "Siswa Lama"])])
+        else:
+            total_active = len(siswa_df)
+            
     catatan_df = db_data.get("catatan_siswa", pd.DataFrame())
-    cases_count = len(catatan_df[catatan_df["status_followup"] == "NEED FURTHER OBSERVATION"]) if not catatan_df.empty else 0
+    cases_count = 0
+    if not catatan_df.empty:
+        if "status_followup" in catatan_df.columns:
+            cases_count = len(catatan_df[catatan_df["status_followup"] == "NEED FURTHER OBSERVATION"])
+        else:
+            cases_count = len(catatan_df)
     
     return f"""Kamu adalah Principal Educational Director & Executive Auditor LKP LEAP Surabaya.
 Analisis data kinerja institusi LKP LEAP berikut secara menyeluruh (gabungan data akademik Sheets dan operasional Database):

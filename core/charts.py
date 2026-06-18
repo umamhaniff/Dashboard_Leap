@@ -57,19 +57,27 @@ def apply_genesis_theme(fig: go.Figure, title_text: str, xaxis_title: Optional[s
 
 def create_attendance_chart(df: pd.DataFrame) -> go.Figure:
     """Create an interactive attendance visualization."""
-    if 'nama' not in df.columns or 'hadir' not in df.columns:
-        # Fallback chart
+    name_col = "nama_siswa" if "nama_siswa" in df.columns else ("nama" if "nama" in df.columns else None)
+    status_col = "status" if "status" in df.columns else ("hadir" if "hadir" in df.columns else None)
+    
+    if not name_col or not status_col:
         fig = go.Figure()
-        fig.add_annotation(text="Data absensi tidak lengkap", showarrow=False)
+        fig.add_annotation(text="Data absensi tidak lengkap (kolom nama/status tidak ditemukan)", showarrow=False)
         return fig
 
+    df_copy = df.copy()
+    if status_col == "status":
+        df_copy['hadir_num'] = df_copy['status'].isin(["Tepat Waktu", "Terlambat", "Hadir"]).astype(int)
+    else:
+        df_copy['hadir_num'] = pd.to_numeric(df_copy[status_col], errors='coerce').fillna(0)
+
     # Calculate attendance summary
-    attendance_summary = df.groupby('nama')['hadir'].agg(['count', 'sum', 'mean']).reset_index()
+    attendance_summary = df_copy.groupby(name_col)['hadir_num'].agg(['count', 'sum', 'mean']).reset_index()
     attendance_summary.columns = ['nama', 'total_pertemuan', 'hadir_count', 'attendance_rate']
     attendance_summary['attendance_rate'] = attendance_summary['attendance_rate'] * 100
 
-    # Sort by attendance rate
-    attendance_summary = attendance_summary.sort_values('attendance_rate', ascending=True)
+    # Sort and pick the 15 students with lowest attendance to highlight attention areas
+    attendance_summary = attendance_summary.sort_values('attendance_rate', ascending=True).head(15)
 
     # Dynamic colors: Red (<75), Orange (75-90), Green (90-99), Indigo (100)
     rates = attendance_summary['attendance_rate']
@@ -100,9 +108,9 @@ def create_attendance_chart(df: pd.DataFrame) -> go.Figure:
         customdata=attendance_summary['total_pertemuan']
     ))
 
-    apply_genesis_theme(fig, "Tingkat Kehadiran Siswa", "Tingkat Kehadiran (%)", "Nama Siswa")
+    apply_genesis_theme(fig, "15 Siswa dengan Kehadiran Terendah", "Tingkat Kehadiran (%)", "Nama Siswa")
     fig.update_layout(
-        height=max(400, len(attendance_summary) * 22),  # Dynamic height
+        height=450,
         showlegend=False
     )
 
@@ -418,7 +426,7 @@ def create_web_traffic_timeline(db: Dict[str, pd.DataFrame]) -> go.Figure:
 def create_absence_reasons_chart(df: pd.DataFrame) -> go.Figure:
     """Create a pie chart for absence reasons."""
     # Find absent rows
-    absent_df = df[df["status"] == "Tidak Hadir"]
+    absent_df = df[df["status"].astype(str).str.contains("Tidak Hadir", case=False, na=False)]
     if absent_df.empty or "catatan" not in absent_df.columns:
         fig = go.Figure()
         fig.add_annotation(text="Tidak ada data alasan ketidakhadiran", showarrow=False)
