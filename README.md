@@ -1,22 +1,22 @@
 # 🛡️ EduDecision AI V2 - LKP LEAP Surabaya
 
-**EduDecision AI V2** adalah sistem pendukung keputusan hibrida (*Hybrid Decision Support System - DSS*) berbasis **Streamlit** yang dirancang untuk LKP LEAP Surabaya. Sistem ini memadukan data akademis dari Google Sheets dengan data operasional dari database SQL (MariaDB) untuk menghasilkan analisis taktis dan rekomendasi yang dipandu oleh kecerdasan buatan (**Google Gemini AI**).
+**EduDecision AI V2** adalah sistem pendukung keputusan hibrida (*Hybrid Decision Support System - DSS*) berbasis **Streamlit** yang dirancang untuk LKP LEAP Surabaya. Sistem ini memadukan data akademis dari Google Sheets dengan data operasional statistik situs web dari database SQL (MariaDB) untuk menghasilkan analisis taktis dan rekomendasi keputusan yang dipandu oleh kecerdasan buatan (**Google Gemini AI**).
 
-Sistem ini didesain menggunakan **Genesis Design System** yang responsif dan mengedepankan pendekatan *Mobile First Approach (MFA)* tetapi tetap optimal saat dijalankan pada layar desktop.
+Sistem ini didesain menggunakan **Genesis Design System** yang responsif dan mengedepankan pendekatan *Mobile First Approach (MFA)* pada halaman masuk (*login*), namun tetap optimal saat dijalankan pada layar desktop.
 
 ---
 
-## 🎨 Arsitektur & Sumber Data Utama
+## 🎨 Arsitektur & Sumber Data Utama (Dual-Input Isolated)
 
 EduDecision AI V2 memiliki dual-input terisolasi untuk memetakan dua aspek utama operasional lembaga:
 
 1. **Google Sheets (Fokus Akademik & Kehadiran)**:
-   * **Sumber Data**: `DATA_SISWA`, `DATA_ABSENSI`, `DATA_NILAI`, `DATA_KELUAR`, `DATA_OVERVIEW`.
-   * **Fokus**: Monitoring performa akademis (nilai ujian), tren kehadiran harian, dan prediksi retensi belajar siswa.
+   * **Sumber Data**: Lembar kerja `DATA_SISWA`, `DATA_ABSENSI`, `DATA_NILAI`, `DATA_KELUAR`, `DATA_OVERVIEW`.
+   * **AI Engine**: **Gemini Academic Engine** — menghasilkan analisis nilai ujian, pemantauan tren kehadiran, pendeteksian dini siswa berisiko keluar (*dropout*), dan rekomendasi mitigasi pembinaan.
    
-2. **Database SQL MariaDB (Fokus Operasional & Layanan Siswa)**:
-   * **Sumber Data**: Tabel `siswa`, `kursus_siswa`, `jadwal_siswa`, `catatan_siswa`, `catatan_remidi_siswa`, `web_statistik`.
-   * **Fokus**: Audit administrasi kelas (rombel), persetujuan rapor (*Rapor Approval*), penanganan kasus siswa oleh CS (*Customer Relationship*), dan audit log remedial.
+2. **Database SQL MariaDB (Fokus Operasional & Statistik Web)**:
+   * **Sumber Data**: Tabel `web_statistik` (Port MariaDB: `3077`).
+   * **AI Engine**: **Gemini Operations Engine** — mengaudit log lalu lintas web, mendeteksi pola anomali akses eksternal, dan mengidentifikasi isu performa server.
 
 ---
 
@@ -37,6 +37,7 @@ EduDecision AI V2 memiliki dual-input terisolasi untuk memetakan dua aspek utama
 * **🏫 Rombel & Persetujuan Rapor**: Monitoring kemajuan persetujuan rapor per rombel kelas.
 * **🔍 Kasus Observasi (CRM/CS)**: Pelacakan kasus bimbingan siswa yang sedang diobservasi lebih lanjut oleh tim CS.
 * **📝 Audit Remedial**: Pelacakan riwayat kenaikan nilai siswa sebelum dan sesudah remedial serta status persetujuan guru pengampu.
+* **🌐 Website Analytics & Traffic Logs**: Monitoring lalu lintas web, tren pengunjung, deteksi anomali akses, audit log performa server (MariaDB `web_statistik`).
 
 ### 📥 4. Ekspor Laporan Premium (PNG Local Download)
 * Semua panel analisis AI dilengkapi dengan tombol unduh lokal (**Unduh Laporan sebagai PNG**).
@@ -56,6 +57,12 @@ Dashboard_Leap/
 │   ├── data_pipeline.py        # 🔄 Pipeline penarikan, pembersihan, & mock data
 │   ├── llm_analyzer.py         # 🤖 Engine integrasi Gemini AI (Failover & Prompts)
 │   └── charts.py               # 📊 Visualisasi grafik interaktif (Plotly)
+├── docs/
+│   ├── prd_hybrid_dss.md       # 📑 PRD utama (V2.0)
+│   ├── prd_hybrid_dss_v1.md    # 📑 PRD cadangan / riwayat versi (V1.0)
+│   ├── design_style.md         # 🎨 Panduan Gaya Desain Genesis & MFA Login
+│   ├── genesis-DESIGN.md       # 🎨 Acuan Desain Genesis System dasar
+│   └── database_context.md     # 🗄️ Detail skema basis data
 ├── styles/
 │   └── style.css               # 🎨 Lembar gaya Genesis Design System
 ├── tests/
@@ -75,7 +82,7 @@ Dashboard_Leap/
 
 ### Prasyarat Sistem
 * Python 3.9 s.d. 3.13
-* MariaDB / MySQL Server (Default: Port `3307` sesuai konfigurasi sistem LKP)
+* MariaDB / MySQL Server (Host lokal/cloud, Port: **`3077`** sesuai konfigurasi target)
 
 ### Langkah Setup
 
@@ -110,7 +117,7 @@ Dashboard_Leap/
 
    # MariaDB Config
    mariadb_host = "127.0.0.1"
-   mariadb_port = 3307
+   mariadb_port = 3077
    mariadb_user = "root"
    mariadb_password = ""
    mariadb_database = "dataleap"
@@ -143,6 +150,13 @@ Untuk memverifikasi fungsionalitas pipeline data, prompt, dan settings, jalankan
 ```powershell
 .venv/Scripts/python.exe -m pytest -v
 ```
+
+---
+
+## 🎨 Spesifikasi Tampilan & Gaya Desain
+* **MFA Login Page**: Didesain responsif menggunakan layout CSS khusus. Pada layar lebar (Desktop), lebar box login melebar dinamis hingga `850px` (`min-width: 1200px`) dan `680px` (`min-width: 768px`), namun tetap `100%` di layar mobile.
+* **Sidebar Navigasi**: Menu navigasi sidebar menggunakan komponen `st.sidebar.radio` untuk memilih modul aktif (`Overview`, `Akademik`, `Operasional`) dengan tombol **Sign Out** terintegrasi.
+* Detail gaya lengkap dapat dilihat di berkas dokumentasi gaya desainer: [docs/design_style.md](file:///D:/_CampusLife/ProjectCampus/6Magang/Dashboard_Leap/docs/design_style.md).
 
 ---
 

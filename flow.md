@@ -1,274 +1,131 @@
-# 🛡️ LEAP Security Dashboard - Architecture & Data Flow
+# 🛡️ EduDecision AI V2 - Architecture & Data Flow
 
-## 📋 Overview
-
-LEAP Security Dashboard adalah platform analitik keamanan khusus untuk LKP LEAP yang mengintegrasikan Google Sheets sebagai data source utama dengan AI-powered security analysis menggunakan Google Gemini.
-
-## 🏗️ Project Architecture
-
-### Core Structure
-
-| Path                      | Type             | Description                        | Dependencies          | Output                              |
-| ------------------------- | ---------------- | ---------------------------------- | --------------------- | ----------------------------------- |
-| `app.py`                  | 🎯 Main App      | Streamlit dashboard entrypoint     | `core.*`, `streamlit` | Interactive web dashboard           |
-| `config/settings.py`      | ⚙️ Config        | Google Sheets & GCP configuration  | -                     | App settings & secrets              |
-| `core/data_pipeline.py`   | 🔄 Data Pipeline | Data loading, cleaning, processing | `gspread`, `pandas`   | Clean DataFrames                    |
-| `core/llm_analyzer.py`    | 🤖 AI Engine     | Gemini AI security analysis        | `google-generativeai` | Security insights & recommendations |
-| `core/charts.py`          | 📊 Visualization | Plotly interactive charts          | `plotly`              | Interactive visualizations          |
-| `styles/style.css`        | 🎨 Styling       | Custom dashboard CSS               | -                     | UI styling                          |
-| `.streamlit/secrets.toml` | 🔐 Secrets       | API keys & credentials             | -                     | Secure configuration                |
-
-## 🔄 Data Flow Pipeline
-
-```mermaid
-graph TD
-    A[Google Sheets] --> B[authenticate_google_sheets()]
-    B --> C[_open_spreadsheet()]
-    C --> D[get_sheet_data()]
-    D --> E[load_sheet_to_dataframe()]
-    E --> F[_apply_data_types()]
-    F --> G[clean_all_data()]
-    G --> H[get_data_quality_report()]
-    H --> I[analyze_security()]
-    I --> J[create_attendance_chart()]
-    J --> K[Streamlit Dashboard]
-
-    style A fill:#e1f5fe
-    style I fill:#f3e5f5
-    style K fill:#e8f5e8
-```
-
-### Detailed Flow Steps
-
-1. **🔐 Authentication**: Connect to Google Sheets API using service account
-2. **📄 Spreadsheet Access**: Open spreadsheet by URL or ID
-3. **📊 Data Extraction**: Fetch all data from configured sheets
-4. **🔄 Data Loading**: Convert to pandas DataFrames with proper structure
-5. **🧹 Data Cleaning**: Apply type conversion, error handling, missing value treatment
-6. **📈 Quality Analysis**: Generate comprehensive data quality reports
-7. **🤖 AI Analysis**: Security analysis using Google Gemini AI
-8. **📊 Visualization**: Create interactive charts and dashboards
-9. **🌐 Web Interface**: Serve via Streamlit with real-time updates
-
-## 📁 Data Sources & Structure
-
-### Google Sheets Integration
-
-| Sheet Name       | Purpose             | Key Columns                 | Data Types              |
-| ---------------- | ------------------- | --------------------------- | ----------------------- |
-| `DATA_MASTER`    | Master student data | nama, rombel, kelas         | string, string          |
-| `DATA_ABSENSI`   | Attendance records  | nama, tanggal, hadir        | string, date, boolean   |
-| `DATA_NILAI`     | Academic scores     | nama, mata_pelajaran, nilai | string, string, numeric |
-| `DATA_PERTEMUAN` | Class sessions      | tanggal, materi, pengajar   | date, string, string    |
-
-### Data Processing Stages
-
-#### Stage 1: Raw Data Loading
-
-```python
-# From core/data_pipeline.py
-def load_all_data() -> Dict[str, pd.DataFrame]:
-    # Authenticate with Google Sheets
-    # Open spreadsheet
-    # Extract all sheets
-    # Return raw DataFrames
-```
-
-#### Stage 2: Data Cleaning Pipeline
-
-```python
-# From core/data_pipeline.py
-def clean_all_data(dataframes: Dict[str, pd.DataFrame]):
-    # Apply Google Sheets error cleaning
-    # Apply sheet-specific cleaning (attendance, master, scores)
-    # Handle missing values
-    # Remove empty rows
-    # Return cleaned DataFrames
-```
-
-#### Stage 3: AI Security Analysis
-
-```python
-# From core/llm_analyzer.py
-def analyze_security(dataframes: Dict[str, pd.DataFrame]):
-    # Prepare data summary for AI
-    # Call Google Gemini API
-    # Generate security insights
-    # Return analysis report
-```
-
-## 🔧 Configuration Management
-
-### Settings Hierarchy
-
-```
-.streamlit/secrets.toml (highest priority)
-         ↓
-config/settings.py (defaults)
-         ↓
-Hardcoded defaults (fallback)
-```
-
-### Key Configuration Files
-
-#### `.streamlit/secrets.toml`
-
-```toml
-# AI Configuration
-GEMINI_API_KEY = "AIzaSy..."
-
-# Data Source Configuration
-spreadsheet_url = "https://docs.google.com/spreadsheets/d/.../edit"
-sheet_names = ["DATA_MASTER", "DATA_ABSENSI", "DATA_NILAI"]
-
-# GCP Credentials
-[gcp_service_account_json]
-type = "service_account"
-project_id = "dashboard-leap"
-private_key = "..."
-client_email = "..."
-```
-
-#### `config/settings.py`
-
-```python
-# Default configurations
-SPREADSHEET_URL = ""
-SERVICE_ACCOUNT_PATH = "service_account.json"
-SHEET_NAMES = ['DATA_MASTER', 'DATA_ABSENSI', 'DATA_NILAI']
-
-# AI Analysis Configuration
-SECURITY_ANALYSIS_CONFIG = {
-    'system_instruction': "...",
-    'temperature': 0.3
-}
-
-# Data Type Mappings
-DATA_TYPE_MAPPINGS = {
-    'boolean_columns': ['hadir', 'present'],
-    'numeric_columns': ['nilai', 'score'],
-    'date_columns': ['tanggal', 'date']
-}
-```
-
-## 🤖 AI Integration Architecture
-
-### Gemini AI Pipeline
-
-```mermaid
-graph LR
-    A[Data Summary] --> B[Gemini API]
-    B --> C[System Instructions]
-    C --> D[Security Analysis]
-    D --> E[Recommendations]
-    E --> F[Natural Language Output]
-
-    style B fill:#f3e5f5
-    style D fill:#e8f5e8
-```
-
-### AI Features
-
-| Component                             | Function          | Input                  | Output                  |
-| ------------------------------------- | ----------------- | ---------------------- | ----------------------- |
-| `prepare_data_summary()`              | Data aggregation  | DataFrames             | Structured text summary |
-| `analyze_security()`                  | AI analysis       | Data summary + context | Security insights       |
-| `generate_security_recommendations()` | Actionable advice | Analysis results       | Recommendation list     |
-
-## 📊 Visualization Pipeline
-
-### Chart Generation Flow
-
-```mermaid
-graph TD
-    A[Clean DataFrames] --> B[Chart Functions]
-    B --> C[Plotly Figures]
-    C --> D[Streamlit Display]
-
-    B --> E[create_attendance_chart()]
-    B --> F[create_score_distribution()]
-    B --> G[create_overview_metrics_chart()]
-```
-
-### Interactive Features
-
-- **Real-time Updates**: Data refreshes every 5 minutes
-- **Caching Strategy**: `@st.cache_data(ttl=300)` for performance
-- **Responsive Design**: Mobile-friendly layouts
-- **Expandable Sections**: Detailed analysis in expanders
-
-## 🔄 Caching & Performance
-
-### Cache Strategy
-
-| Component                 | Cache TTL  | Purpose      | Update Trigger |
-| ------------------------- | ---------- | ------------ | -------------- |
-| `load_pipeline_data()`    | 5 minutes  | Data loading | Manual refresh |
-| `get_security_analysis()` | 10 minutes | AI analysis  | Data changes   |
-| Static assets             | Session    | CSS, config  | App restart    |
-
-### Performance Optimizations
-
-- **Lazy Loading**: Data loaded only when needed
-- **Background Processing**: AI analysis cached separately
-- **Memory Management**: DataFrames cleaned after processing
-- **API Rate Limiting**: Respect Google APIs quotas
-
-## 🛡️ Security Architecture
-
-### Data Protection Layers
-
-1. **Transport Security**: HTTPS for all API calls
-2. **Credential Management**: Secrets stored securely in Streamlit
-3. **Access Control**: Service account with minimal permissions
-4. **Data Sanitization**: Input validation and cleaning
-5. **Error Handling**: Secure error messages without data leakage
-
-### AI Security Features
-
-- **Context Isolation**: AI analysis scoped to LKP LEAP data
-- **Prompt Engineering**: Specialized security analysis prompts
-- **Output Filtering**: Sanitized AI responses
-- **Audit Logging**: Analysis activities tracked
-
-## 🚀 Deployment Considerations
-
-### Development Environment
-
-- Local Streamlit server
-- Hot reload for development
-- Debug mode enabled
-
-### Production Deployment
-
-- Streamlit Cloud or dedicated server
-- Environment variables for secrets
-- Monitoring and logging
-- Backup strategies
-
-### Scaling Considerations
-
-- API rate limit management
-- Data size optimization
-- Concurrent user handling
-- Cache invalidation strategies
-
-## 🔧 Maintenance & Monitoring
-
-### Health Checks
-
-- Google Sheets API connectivity
-- Gemini AI API availability
-- Data loading success rates
-- Memory usage monitoring
-
-### Error Recovery
-
-- Graceful degradation on API failures
-- Fallback to cached data
-- User-friendly error messages
-- Automatic retry mechanisms
+Dokumen ini mendeskripsikan arsitektur sistem, alur pemrosesan data hibrida (*Dual-Input Data Pipeline*), mekanisme orkestrasi AI (*Dual Engines & Failover*), serta detail visualisasi antarmuka dalam **EduDecision AI V2**.
 
 ---
 
-**📊 This architecture ensures reliable, secure, and performant security analysis for LKP LEAP data operations.**
+## 🏗️ Struktur Arsitektur Sistem
+
+Sistem ini didesain secara modular untuk berjalan stabil pada baseline perangkat keras lokal terbatas (8GB RAM RAM Baseline) dengan membagi fungsionalitas ke beberapa komponen utama:
+
+```
+[Google Sheets API]  ------ (Academic Stream) ------> [Gemini Academic Engine]
+                                                                |
+                                                                v
+                                                       [Streamlit App Core] <--- [Genesis CSS Styling]
+                                                                ^
+                                                                |
+[MariaDB (Port 3077)] ------ (Operations Stream) ------> [Gemini Operations Engine]
+```
+
+### Pemetaan File & Modul
+
+| Berkas / Modul | Peran | Alur Ketergantungan | Hasil Keluaran |
+| :--- | :--- | :--- | :--- |
+| `app.py` | 🎯 Main Entrypoint | `core.*`, `styles/style.css` | Antarmuka pengguna (*Dashboard UI*) |
+| `config/settings.py`| ⚙️ Config Manager | `secrets.toml`, Environment variables | Parameter koneksi & setup global |
+| `core/data_pipeline.py`| 🔄 Data Pipeline | `mysql-connector`, `gspread`, `pandas` | DataFrames bersih & Mock Data Simulator |
+| `core/llm_analyzer.py`| 🤖 AI Orchestrator | `google-generativeai`, Failover loop | Insight Akademik & Audit Operasional Web |
+| `core/charts.py` | 📊 Visualization | `plotly` | Grafik interaktif (Plotly Figures) |
+| `styles/style.css` | 🎨 Visual Styles | Terbaca oleh `app.py` via HTML Markdown | Estetika visual *Genesis Design* & MFA |
+
+---
+
+## 🔄 Dual-Input Data Flow Pipeline
+
+Sistem membagi penarikan data menjadi dua aliran terisolasi (*read-only*) untuk menjamin keamanan dan performa memori.
+
+```mermaid
+graph TD
+    %% Input Sources
+    A[Google Sheets API] -->|Academic & Attendance| B[load_sheets_data]
+    C[MariaDB Port 3077] -->|web_statistik| D[load_mariadb_data]
+
+    %% Preprocessing
+    B --> E[Sanitize Sheets: Hapus #REF!, #DIV/0!]
+    D --> F[Sanitize SQL: Clean NULL & Type Casting]
+    
+    %% Cache & Streamlit Core
+    E --> G[st.cache_data ttl=300]
+    F --> G
+    
+    %% Engine Processing
+    G --> H[Unified Overview UI]
+    G --> I[Gemini Academic Engine]
+    G --> J[Gemini Operations Engine]
+    
+    %% AI Output Generation
+    I -->|Rekomendasi Kehadiran & Nilai| K[Academic Dashboard Panels]
+    J -->|Audit Log Trafik & Deteksi Anomali| L[Operations Dashboard Panels]
+
+    style A fill:#e1f5fe,stroke:#039be5
+    style C fill:#e8f5e9,stroke:#43a047
+    style G fill:#fff9c4,stroke:#fbc02d
+    style I fill:#f3e5f5,stroke:#8e24aa
+    style J fill:#f3e5f5,stroke:#8e24aa
+```
+
+### Tahapan Aliran Data:
+
+1. **Inisiasi Kredensial**: `config/settings.py` memuat kredensial dari `.streamlit/secrets.toml` untuk port MariaDB `3077` dan Service Account JSON GCP.
+2. **Koneksi & Ekstraksi**:
+   * **Academic Stream**: `gspread` membuka spreadsheet berdasarkan ID dan membaca lembar `DATA_SISWA`, `DATA_ABSENSI`, `DATA_NILAI`, `DATA_KELUAR`, `DATA_OVERVIEW`.
+   * **Operations Stream**: Konektor SQL MariaDB melakukan kueri pembacaan pada tabel `web_statistik`.
+3. **Sanitasi Data**:
+   * Mengonversi string rumus hancur (`#REF!`, `#VALUE!`, dll.) menjadi nilai kosong (`NaN`).
+   * Melakukan *type-downcasting* untuk kolom numerik dan boolean guna menghemat penggunaan memori RAM.
+4. **Optimasi Memori (Caching)**: Data yang berhasil dibersihkan disimpan sementara menggunakan dekorator Streamlit `@st.cache_data(ttl=300)` untuk mencegah kueri berulang yang berat setiap halaman disegarkan (*refreshed*).
+5. **On-Demand AI Execution**: Analisis kecerdasan buatan dijalankan hanya saat tombol **"Run AI Analysis"** diklik secara manual oleh pengguna untuk menekan biaya konsumsi token API.
+
+---
+
+## 🤖 AI Orchestration & Multi-Model Failover
+
+Untuk mengatasi kendala kegagalan koneksi API, keterbatasan kuota akun gratis, dan error status **HTTP 429 (Rate Limit)**, sistem menerapkan *failover registry loop* sekuensial.
+
+```mermaid
+graph TD
+    A[Trigger Run AI Analysis] --> B[Coba Model Prioritas 1: gemini-3.1-flash-lite-preview]
+    B -->|Sukses| C[Tampilkan Rekomendasi / Hasil Audit]
+    B -->|Gagal/429| D[Coba Model Prioritas 2: gemini-3-flash-preview]
+    D -->|Sukses| C
+    D -->|Gagal/429| E[Coba Model Prioritas 3: gemini-2.5-flash-lite]
+    E -->|Sukses| C
+    E -->|Gagal/429| F[Fallback: gemini-flash-latest]
+    F -->|Sukses| C
+    F -->|Semua Gagal| G[Tampilkan Pesan Error / Gunakan Local Cache]
+
+    style B fill:#e8f5e9
+    style F fill:#ffe0b2
+    style G fill:#ffebee
+```
+
+### Konfigurasi Mesin AI:
+
+* **Gemini Academic Engine**: Menggunakan instruksi sistem khusus untuk menganalisis data kehadiran dan nilai ujian. Fokus pada interpretasi tren retensi siswa (mitigasi *dropout*) dan merumuskan 5 rekomendasi pembinaan taktis.
+* **Gemini Operations Engine**: Menggunakan instruksi sistem yang mengkhususkan diri pada audit jaringan dan keamanan siber. Menerima data log statistik web (`web_statistik`) dan fokus pada deteksi anomali akses (seperti percobaan *brute force*, scraping agresif, atau kegagalan respon server).
+
+---
+
+## 🎨 UI/UX Layout & Interaksi Pengguna (Genesis Design)
+
+Antarmuka EduDecision AI V2 menerapkan gaya visual **Genesis Design** dengan detail interaksi sebagai berikut:
+
+### 1. MFA Login Page
+* Formulir login diposisikan di tengah layar dengan background netral terang (`#FAFAFA`) dan sudut membulat (`12px`).
+* Responsivitas lebar kontainer dikontrol oleh CSS kustom:
+  * Layar Desktop: `max-width: 850px`
+  * Layar Tablet: `max-width: 680px`
+  * Layar Mobile: `width: 100%`
+
+### 2. Dashboard Sidebar Navigation
+* Menggunakan `st.sidebar.radio` untuk navigasi antar halaman utama secara langsung.
+* Menu terdiri dari:
+  1. **Unified Overview**: Menampilkan KPI gabungan dan grafik visualisasi.
+  2. **Academic Dashboard**: Modul khusus data Google Sheets + Gemini Academic Engine.
+  3. **Operations Dashboard**: Modul khusus log MariaDB + Gemini Operations Engine.
+* Tombol **Sign Out** diletakkan di bagian paling bawah sidebar menggunakan modifikasi CSS kustom untuk memisahkan alur keluar secara logis.
+
+### 3. Ekspor Laporan
+* Pembuatan tombol unduh lokal pada panel rekomendasi AI.
+* HTML/CSS pada sisi klien memicu `html2canvas` untuk menangkap elemen visual dashboard dan menyimpannya sebagai file `.png` langsung pada perangkat pengguna tanpa melakukan penyimpanan di sisi server.
