@@ -66,6 +66,7 @@ def check_connection_statuses():
 
 # --- SIDEBAR DEBUG ---
 def display_sidebar_debug(cleaned_data):
+    st.sidebar.markdown('---')
     st.sidebar.subheader("🛠️ Debug Center")
     with st.sidebar.expander("🔍 Gemini Models", expanded=False):
         try:
@@ -73,7 +74,11 @@ def display_sidebar_debug(cleaned_data):
             if api_key:
                 from google import genai
                 client = genai.Client(api_key=api_key)
-                models = [m.name for m in client.models.list() if 'generateContent' in m.supported_generation_methods]
+                models = []
+                for m in client.models.list():
+                    actions = getattr(m, 'supported_actions', None) or getattr(m, 'supported_generation_methods', [])
+                    if 'generateContent' in actions:
+                        models.append(m.name)
                 st.json({"status": "Connected", "models": models})
         except Exception as e:
             st.json({"status": "Error", "message": str(e)})
@@ -81,6 +86,10 @@ def display_sidebar_debug(cleaned_data):
     with st.sidebar.expander("📊 Data Inventory", expanded=False):
         inventory = {sheet: {"rows": len(df), "cols": len(df.columns)} for sheet, df in cleaned_data.items()}
         st.json(inventory)
+
+    spreadsheet_url = st.secrets.get("spreadsheet_url")
+    if spreadsheet_url:
+        st.sidebar.link_button("📂 Buka Google Sheets", spreadsheet_url, use_container_width=True)
 
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
