@@ -15,6 +15,27 @@ from config.settings import SECURITY_ANALYSIS_CONFIG
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# List prioritasi model untuk failover analisis umum dan keamanan (Gemini & Gemma)
+DEFAULT_MODELS_FAILOVER = [
+    'models/gemini-3.1-flash-lite-preview', # Prioritas 1: Versi 3.1 Lite (Tercepat/Terbaru)
+    'models/gemini-3-flash-preview',      # Prioritas 2: Versi 3.0 Flash
+    'models/gemini-2.5-flash-lite',       # Prioritas 3: Versi 2.5 Lite
+    'models/gemini-2.5-flash',            # Prioritas 4: Versi 2.5 Standar
+    'models/gemini-2.0-flash-lite',       # Prioritas 5: Versi 2.0 Lite
+    'models/gemini-2.0-flash',            # Prioritas 6: Versi 2.0 Standar
+    'models/gemini-3.1-pro-preview',      # Prioritas 7: Versi 3.1 Pro
+    'models/gemma-3-27b-it',              # Prioritas 8: Gemma Generasi 3
+    'models/gemini-flash-latest'          # Fallback: Paling stabil (1.5 Flash)
+]
+
+# List model yang lebih ringan dan cepat khusus untuk profil siswa individual
+LITE_MODELS_FAILOVER = [
+    'models/gemini-3.1-flash-lite-preview',
+    'models/gemini-2.5-flash-lite',
+    'models/gemini-2.0-flash-lite',
+    'models/gemini-flash-latest'
+]
+
 def get_api_key() -> str:
     """Ambil API Key dari Streamlit secrets atau environment."""
     if hasattr(st, 'secrets') and 'GEMINI_API_KEY' in st.secrets:
@@ -292,17 +313,7 @@ def analyze_feature(dataframes: dict, feature_key: str) -> str:
     prompt_func, sys_instruction = prompt_map[feature_key]
     prompt = prompt_func(dataframes)
     
-    models_to_try = [
-        'models/gemini-3.1-flash-lite-preview',
-        'models/gemini-3-flash-preview',
-        'models/gemini-2.5-flash-lite',
-        'models/gemini-2.5-flash',
-        'models/gemini-2.0-flash-lite',
-        'models/gemini-2.0-flash',
-        'models/gemini-3.1-pro-preview',
-        'models/gemma-3-27b-it',
-        'models/gemini-flash-latest'
-    ]
+    models_to_try = DEFAULT_MODELS_FAILOVER
     
     last_error = ""
     for model_name in models_to_try:
@@ -339,19 +350,7 @@ def analyze_security(dataframes: dict, source_type: str = "google_sheets") -> st
     
     client = genai.Client(api_key=api_key)
 
-    # --- LIST MODEL SESUAI CONTOH HANS ---
-    # Aku tambahkan prefix 'models/' supaya API-nya bisa mengenali dengan tepat
-    models_to_try = [
-        'models/gemini-3.1-flash-lite-preview', # Prioritas 1: Versi 3.1 Lite
-        'models/gemini-3-flash-preview',      # Prioritas 2: Versi 3.0 Flash
-        'models/gemini-2.5-flash-lite',       # Prioritas 3: Versi 2.5 Lite
-        'models/gemini-2.5-flash',            # Prioritas 4: Versi 2.5 Standar
-        'models/gemini-2.0-flash-lite',       # Prioritas 5: Versi 2.0 Lite
-        'models/gemini-2.0-flash',            # Prioritas 6: Versi 2.0 Standar
-        'models/gemini-3.1-pro-preview',      # Prioritas 7: Versi 3.1 Pro
-        'models/gemma-3-27b-it',              # Prioritas 8: Gemma Generasi 3
-        'models/gemini-flash-latest'          # Fallback: Paling stabil (1.5 Flash)
-    ]
+    models_to_try = DEFAULT_MODELS_FAILOVER
 
     # Ambil prompt dan system instruction sesuai source_type
     if source_type == "google_sheets":
@@ -411,13 +410,7 @@ def analyze_student_profile(student_name: str, student_info: dict) -> str:
     
     client = genai.Client(api_key=api_key)
     
-    # Prioritas model untuk kecepatan dan kestabilan
-    models_to_try = [
-        'models/gemini-3.1-flash-lite-preview',
-        'models/gemini-2.5-flash-lite',
-        'models/gemini-2.0-flash-lite',
-        'models/gemini-flash-latest'
-    ]
+    models_to_try = LITE_MODELS_FAILOVER
     
     info_str = f"=== PROFIL SISWA: {student_name} ===\n"
     for key, val in student_info.items():
