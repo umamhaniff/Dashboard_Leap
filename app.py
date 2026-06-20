@@ -651,6 +651,47 @@ if st.session_state.selected_source == 'overview':
             st.plotly_chart(fig_romb, use_container_width=True)
 
     st.markdown("---")
+    
+    # 🔍 DSS Segmentasi & Perangkingan Siswa (MADM-ML)
+    st.markdown("#### 🔮 Hasil Segmentasi & Perangkingan Intervensi Siswa (MADM-ML)")
+    st.markdown("Berikut adalah hasil pengelompokan tingkat kerentanan siswa terpadu menggunakan metode **SAW** (MADM) dan segmentasi **K-Means Clustering** (Machine Learning).")
+    
+    saw_unified = db_data.get("UNIFIED_SAW", pd.DataFrame())
+    if not saw_unified.empty:
+        saw_disp = saw_unified.copy()
+        
+        # Rename columns for presentation
+        cols_map = {
+            "nama_siswa": "Nama Siswa",
+            "academic_score": "Rerata Nilai Ujian",
+            "attendance_rate": "Persentase Kehadiran (%)",
+            "has_critical_notes": "Ada Catatan Kritis CS",
+            "total_notes": "Total Catatan CS",
+            "saw_score": "Skor Preferensi DSS",
+            "saw_rank": "Peringkat",
+            "risk_cluster": "Kluster Risiko"
+        }
+        
+        existing_cols = [c for c in cols_map.keys() if c in saw_disp.columns]
+        saw_disp = saw_disp[existing_cols]
+        
+        if "has_critical_notes" in saw_disp.columns:
+            saw_disp["has_critical_notes"] = saw_disp["has_critical_notes"].map({1.0: "Ya", 0.0: "Tidak"}).fillna("Tidak")
+        if "risk_cluster" in saw_disp.columns:
+            saw_disp["Kluster Risiko"] = saw_disp["risk_cluster"].map({
+                0: "🔴 Kritis (High Risk)",
+                1: "🟡 Observasi (Medium Risk)",
+                2: "🟢 Stabil (Safe)"
+            }).fillna("Observasi")
+            saw_disp.drop(columns=["risk_cluster"], inplace=True)
+            
+        saw_disp.rename(columns={k: v for k, v in cols_map.items() if k != "risk_cluster"}, inplace=True)
+        saw_disp = saw_disp.sort_values("Peringkat", ascending=True)
+        
+        st.dataframe(saw_disp, use_container_width=True, height=250)
+    else:
+        st.info("Kalkulasi segmentasi terpadu sedang diproses atau kosong.")
+
     if st.button("🤖 Jalankan Audit AI Unified LKP Overview", type="primary"):
         st.session_state.run_analysis = True
         
@@ -741,6 +782,45 @@ elif st.session_state.selected_source == 'google_sheets':
             )
             
         st.markdown("---")
+        
+        # 🔍 DSS Segmentasi & Perangkingan Siswa Akademik (MADM-ML)
+        st.markdown("#### 🔮 Hasil Segmentasi & Perangkingan Siswa Akademik (MADM-ML)")
+        st.markdown("Berikut adalah hasil pengelompokan tingkat kerentanan akademik siswa menggunakan metode **SAW** (MADM) dan segmentasi **K-Means Clustering** (Machine Learning).")
+        
+        saw_academic = cleaned_data.get("DATA_SAW_RANKING", pd.DataFrame())
+        if not saw_academic.empty:
+            saw_disp = saw_academic.copy()
+            
+            # Rename columns for presentation
+            cols_map = {
+                "nama_siswa": "Nama Siswa",
+                "score": "Rerata Nilai",
+                "attendance_rate": "Persentase Kehadiran (%)",
+                "passing_rate": "Rasio Ujian Tuntas",
+                "late_count": "Jumlah Terlambat",
+                "saw_score": "Skor Preferensi DSS",
+                "saw_rank": "Peringkat",
+                "risk_cluster": "Kluster Risiko"
+            }
+            
+            existing_cols = [c for c in cols_map.keys() if c in saw_disp.columns]
+            saw_disp = saw_disp[existing_cols]
+            
+            if "risk_cluster" in saw_disp.columns:
+                saw_disp["Kluster Risiko"] = saw_disp["risk_cluster"].map({
+                    0: "🔴 Risiko Tinggi (High Risk)",
+                    1: "🟡 Risiko Sedang (Medium Risk)",
+                    2: "🟢 Aman (Low Risk / Safe)"
+                }).fillna("Risiko Sedang")
+                saw_disp.drop(columns=["risk_cluster"], inplace=True)
+                
+            saw_disp.rename(columns={k: v for k, v in cols_map.items() if k != "risk_cluster"}, inplace=True)
+            saw_disp = saw_disp.sort_values("Peringkat", ascending=True)
+            
+            st.dataframe(saw_disp, use_container_width=True, height=250)
+        else:
+            st.info("Kalkulasi segmentasi akademik sedang diproses atau kosong.")
+
         if st.button("🤖 Jalankan Analisis AI Performa Akademik", type="primary"):
             st.session_state.run_analysis = True
             
@@ -927,6 +1007,47 @@ else:
             st.plotly_chart(fig_ortu, use_container_width=True)
             
         st.markdown("---")
+        
+        # 🔍 DSS Segmentasi & Perangkingan Leads (MADM-ML)
+        st.markdown("#### 🔮 Hasil Segmentasi & Perangkingan Prioritas Leads (MADM-ML)")
+        st.markdown("Berikut adalah hasil pengelompokan prospek calon siswa menggunakan metode **SAW** (MADM) dan segmentasi **K-Means Clustering** (Machine Learning).")
+        
+        saw_leads = db_data.get("DB_SAW_LEADS", pd.DataFrame())
+        if not saw_leads.empty:
+            saw_disp = saw_leads.copy()
+            
+            # Rename columns for presentation
+            cols_map = {
+                "nama_lengkap": "Nama Calon Siswa",
+                "jumlah_bayar": "Nominal Pembayaran",
+                "is_fo_lengkap": "Dokumen FO Lengkap",
+                "notes_len": "Panjang Catatan FO",
+                "days_to_pay": "Kecepatan Bayar (Hari)",
+                "saw_score": "Skor Preferensi DSS",
+                "saw_rank": "Peringkat",
+                "risk_cluster": "Kluster Prospek"
+            }
+            
+            existing_cols = [c for c in cols_map.keys() if c in saw_disp.columns]
+            saw_disp = saw_disp[existing_cols]
+            
+            if "is_fo_lengkap" in saw_disp.columns:
+                saw_disp["is_fo_lengkap"] = saw_disp["is_fo_lengkap"].map({1.0: "Ya", 0.0: "Tidak"}).fillna("Tidak")
+            if "risk_cluster" in saw_disp.columns:
+                saw_disp["Kluster Prospek"] = saw_disp["risk_cluster"].map({
+                    0: "❄️ Cold Leads (Rendah)",
+                    1: "🔥 Warm Leads (Sedang)",
+                    2: "⚡ Hot Leads (Tinggi / Prioritas)"
+                }).fillna("Warm Leads")
+                saw_disp.drop(columns=["risk_cluster"], inplace=True)
+                
+            saw_disp.rename(columns={k: v for k, v in cols_map.items() if k != "risk_cluster"}, inplace=True)
+            saw_disp = saw_disp.sort_values("Peringkat", ascending=True)
+            
+            st.dataframe(saw_disp, use_container_width=True, height=250)
+        else:
+            st.info("Kalkulasi segmentasi prioritas leads sedang diproses atau kosong.")
+
         if st.button("🤖 Jalankan Analisis AI Pemasaran & Konversi Leads", type="primary"):
             st.session_state.run_analysis = True
             
