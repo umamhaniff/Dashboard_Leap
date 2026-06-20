@@ -12,6 +12,7 @@ import re
 import streamlit as st
 import logging
 import pymysql
+from sklearn.cluster import KMeans
 from typing import Dict, List, Any, Optional
 from config.settings import (
     SPREADSHEET_ID, SPREADSHEET_URL, SERVICE_ACCOUNT_PATH, SHEET_NAMES,
@@ -537,3 +538,78 @@ def load_mariadb_data() -> Dict[str, pd.DataFrame]:
     except Exception as e:
         logger.warning(f"Database connection failed ({str(e)}). Falling back to mock data engine.")
         return generate_mock_mariadb_data()
+
+
+def calculate_saw(df: pd.DataFrame, criteria: List[str], weights: Dict[str, float], types: Dict[str, str]) -> pd.DataFrame:
+    if df.empty:
+        df_copy = df.copy()
+        df_copy["saw_score"] = 0.0
+        df_copy["saw_rank"] = 0
+        return df_copy
+        
+    df_copy = df.copy()
+    norm_matrix = pd.DataFrame(index=df.index)
+    
+    for c in criteria:
+        if c not in df_copy.columns:
+            df_copy[c] = 0.0
+            
+        series = pd.to_numeric(df_copy[c], errors="coerce").fillna(0.0)
+        max_val = series.max()
+        min_val = series.min()
+        
+        if types[c] == "benefit":
+            if max_val > 0:
+                norm_matrix[c] = series / max_val
+            else:
+                norm_matrix[c] = 0.0
+        else:  # cost
+            norm_matrix[c] = (min_val + 1.0) / (series + 1.0)
+            
+    saw_score = np.zeros(len(df_copy))
+    for c in criteria:
+        saw_score += norm_matrix[c].values * weights[c]
+        
+    df_copy["saw_score"] = saw_score
+    df_copy["saw_rank"] = df_copy["saw_score"].rank(ascending=False, method="min").astype(int)
+    return df_copy
+
+def apply_kmeans_risk(df: pd.DataFrame, features: List[str], n_clusters: int = 3) -> pd.DataFrame:
+    if df.empty:
+        df_copy = df.copy()
+        df_copy["risk_cluster"] = 0
+        return df_copy
+        
+    df_copy = df.copy()
+    n_samples = len(df_copy)
+    
+    if n_samples < n_clusters:
+        sorted_indices = df_copy["saw_score"].argsort()
+        clusters = np.zeros(n_samples, dtype=int)
+        for i, idx in enumerate(sorted_indices):
+            if i < n_samples / 3:
+                clusters[idx] = 0
+            elif i < 2 * n_samples / 3:
+                clusters[idx] = 1
+            else:
+                clusters[idx] = 2
+        df_copy["risk_cluster"] = clusters
+        return df_copy
+        
+    try:
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+        X = df_copy[features].fillna(0.0)
+        cluster_labels = kmeans.fit_predict(X)
+        df_copy["risk_cluster"] = cluster_labels
+        
+        cluster_means = df_copy.groupby("risk_cluster")["saw_score"].mean().sort_values()
+        mapping = {old: new for new, old in enumerate(cluster_means.index)}
+        df_copy["risk_cluster"] = df_copy["risk_cluster"].map(mapping)
+    except Exception as e:
+        import logging
+        logging.warning(f"K-Means clustering failed ({str(e)}). Falling back to ranks.")
+        sorted_ranks = df_copy["saw_score"].rank(ascending=True, method="first")
+        percentiles = sorted_ranks / len(df_copy)
+        df_copy["risk_cluster"] = np.where(percentiles <= 0.33, 0, np.where(percentiles <= 0.66, 1, 2))
+        
+    return df_copy
