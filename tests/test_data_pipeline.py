@@ -90,8 +90,14 @@ def test_sku_specific_saw_kmeans():
             {"id_calon_akademik": 1, "id_calon": 1},
             {"id_calon_akademik": 2, "id_calon": 2}
         ]),
-        "siswa": pd.DataFrame([]),
-        "catatan_siswa": pd.DataFrame([])
+        "siswa": pd.DataFrame([
+            {"id_siswa": 10, "nama_lengkap": "A"},
+            {"id_siswa": 11, "nama_lengkap": "B"}
+        ]),
+        "catatan_siswa": pd.DataFrame([
+            {"id_siswa": 10, "status_followup": "NEED FURTHER OBSERVATION"},
+            {"id_siswa": 11, "status_followup": "CASE CLOSED"}
+        ])
     }
     
     # 1. Sheets SAW
@@ -108,6 +114,14 @@ def test_sku_specific_saw_kmeans():
     unified_res = calculate_unified_saw_kmeans(sheets_mock, db_mock)
     assert "saw_score" in unified_res.columns
     assert "risk_cluster" in unified_res.columns
+    
+    # Verify name mapping resolved successfully
+    assert unified_res.loc[unified_res["nama_siswa"] == "A", "id_siswa"].values[0] == 10
+    assert unified_res.loc[unified_res["nama_siswa"] == "B", "id_siswa"].values[0] == 11
+    
+    # Verify critical notes flag was set correctly
+    assert unified_res.loc[unified_res["nama_siswa"] == "A", "has_critical_notes"].values[0] == 1.0
+    assert unified_res.loc[unified_res["nama_siswa"] == "B", "has_critical_notes"].values[0] == 0.0
 
 
 

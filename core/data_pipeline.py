@@ -827,34 +827,35 @@ def calculate_unified_saw_kmeans(cleaned_sheets: Dict[str, pd.DataFrame], db_dat
     df.rename(columns={"score": "academic_score"}, inplace=True)
     
     # Map Names to Database IDs
-    df["id_siswa"] = np.nan
     if not db_siswa.empty and "nama_lengkap" in db_siswa.columns:
         # Simple name normalization mapping
         db_siswa_copy = db_siswa.copy()
         db_siswa_copy["clean_name"] = db_siswa_copy["nama_lengkap"].astype(str).str.lower().str.strip()
         df["clean_name"] = df["nama_siswa"].astype(str).str.lower().str.strip()
         
-        mapped = df.merge(db_siswa_copy[["id_siswa", "clean_name"]], on="clean_name", how="left")
-        df["id_siswa"] = mapped["id_siswa"]
+        df = df.merge(db_siswa_copy[["id_siswa", "clean_name"]], on="clean_name", how="left")
         df.drop(columns=["clean_name"], inplace=True)
+    else:
+        df["id_siswa"] = np.nan
         
-    df["has_critical_notes"] = 0.0
-    df["total_notes"] = 0.0
-    
     if not catatan_cs.empty and "id_siswa" in catatan_cs.columns:
         catatan_cs_copy = catatan_cs.copy()
         catatan_cs_copy["is_critical"] = (catatan_cs_copy["status_followup"] == "NEED FURTHER OBSERVATION").astype(int)
         
         crit = catatan_cs_copy.groupby("id_siswa")["is_critical"].max().reset_index()
+        crit.rename(columns={"is_critical": "has_critical_notes"}, inplace=True)
+        
         total = catatan_cs_copy.groupby("id_siswa")["is_critical"].count().reset_index()
         total.rename(columns={"is_critical": "total_notes"}, inplace=True)
         
         df = df.merge(crit, on="id_siswa", how="left")
         df = df.merge(total, on="id_siswa", how="left")
         
-        df["has_critical_notes"] = df["is_critical"].fillna(0.0)
+        df["has_critical_notes"] = df["has_critical_notes"].fillna(0.0)
         df["total_notes"] = df["total_notes"].fillna(0.0)
-        df.drop(columns=["is_critical"], inplace=True)
+    else:
+        df["has_critical_notes"] = 0.0
+        df["total_notes"] = 0.0
         
     # Run SAW
     criteria = ["academic_score", "attendance_rate", "has_critical_notes", "total_notes"]
