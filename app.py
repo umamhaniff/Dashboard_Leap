@@ -689,6 +689,22 @@ if st.session_state.selected_source == 'overview':
         saw_disp = saw_disp.sort_values("Peringkat", ascending=True)
         
         st.dataframe(saw_disp, use_container_width=True, height=250)
+        st.markdown("""
+        <div style="background-color: rgba(99, 102, 241, 0.05); padding: 16px; border-radius: 8px; margin-top: 10px; margin-bottom: 20px; border-left: 4px solid #6366F1;">
+            <p style="margin: 0 0 8px 0; font-weight: bold; color: #6366F1; font-size: 14.5px;">💡 Cara Membaca Tabel Analisis Terpadu:</p>
+            <ul style="margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.5;">
+                <li><b>Skor Preferensi DSS (0.0 - 1.0):</b> Merepresentasikan <i>Unified Health & Behavior Index</i> siswa. Semakin mendekati <b>1.0</b>, kondisi akademis, kehadiran, dan perilaku belajar siswa dinilai semakin prima.</li>
+                <li><b>Peringkat:</b> Urutan prioritas penanganan. Siswa dengan Peringkat 1 membutuhkan atensi/intervensi yang paling mendesak.</li>
+                <li><b>Kluster Risiko (K-Means Clustering):</b>
+                    <ul>
+                        <li>🔴 <b>Kritis (High Risk):</b> Kelompok siswa dengan tingkat kerentanan tertinggi, memerlukan tindakan bimbingan segera.</li>
+                        <li>🟡 <b>Observasi (Medium Risk):</b> Kelompok siswa dengan kerentanan sedang, memerlukan pengawasan berkala.</li>
+                        <li>🟢 <b>Stabil (Safe):</b> Kelompok siswa dengan kondisi belajar prima dan stabil.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
     else:
         st.info("Kalkulasi segmentasi terpadu sedang diproses atau kosong.")
 
@@ -818,6 +834,22 @@ elif st.session_state.selected_source == 'google_sheets':
             saw_disp = saw_disp.sort_values("Peringkat", ascending=True)
             
             st.dataframe(saw_disp, use_container_width=True, height=250)
+            st.markdown("""
+            <div style="background-color: rgba(99, 102, 241, 0.05); padding: 16px; border-radius: 8px; margin-top: 10px; margin-bottom: 20px; border-left: 4px solid #6366F1;">
+                <p style="margin: 0 0 8px 0; font-weight: bold; color: #6366F1; font-size: 14.5px;">💡 Cara Membaca Tabel Performa Akademik:</p>
+                <ul style="margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.5;">
+                    <li><b>Skor Preferensi DSS (0.0 - 1.0):</b> Merepresentasikan <i>Academic & Attendance Health Index</i> siswa. Kriteria keuntungan (rerata nilai, kehadiran, kelulusan ujian) menaikkan skor, sedangkan keterlambatan menurunkannya. Semakin mendekati <b>1.0</b>, performa belajar dan kedisiplinan siswa semakin prima.</li>
+                    <li><b>Peringkat:</b> Urutan prioritas pendampingan akademik. Siswa dengan Peringkat 1 membutuhkan atensi akademis yang paling mendesak.</li>
+                    <li><b>Kluster Risiko (K-Means Clustering):</b>
+                        <ul>
+                            <li>🔴 <b>Risiko Tinggi (High Risk):</b> Siswa yang memerlukan pendampingan akademis intensif akibat nilai/kehadiran rendah.</li>
+                            <li>🟡 <b>Risiko Sedang (Medium Risk):</b> Siswa dengan performa rata-rata yang perlu dipantau agar tidak menurun.</li>
+                            <li>🟢 <b>Aman (Low Risk / Safe):</b> Siswa dengan performa akademis stabil dan memuaskan.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
         else:
             st.info("Kalkulasi segmentasi akademik sedang diproses atau kosong.")
 
@@ -1045,6 +1077,22 @@ else:
             saw_disp = saw_disp.sort_values("Peringkat", ascending=True)
             
             st.dataframe(saw_disp, use_container_width=True, height=250)
+            st.markdown("""
+            <div style="background-color: rgba(99, 102, 241, 0.05); padding: 16px; border-radius: 8px; margin-top: 10px; margin-bottom: 20px; border-left: 4px solid #6366F1;">
+                <p style="margin: 0 0 8px 0; font-weight: bold; color: #6366F1; font-size: 14.5px;">💡 Cara Membaca Tabel Prioritas Leads:</p>
+                <ul style="margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.5;">
+                    <li><b>Skor Preferensi DSS (0.0 - 1.0):</b> Merepresentasikan <i>Lead Conversion Potential Index</i>. Mengukur peluang calon siswa untuk mendaftar/membayar berdasarkan kelengkapan berkas, catatan interaksi FO, nominal transaksi awal, dan kecepatan konversi. Semakin mendekati <b>1.0</b>, potensi prospek tersebut semakin tinggi.</li>
+                    <li><b>Peringkat:</b> Prioritas tindak lanjut oleh tim FO/Sales. Calon siswa di Peringkat 1 memiliki prioritas interaksi tertinggi.</li>
+                    <li><b>Kluster Prospek (K-Means Clustering):</b>
+                        <ul>
+                            <li>⚡ <b>Hot Leads (Tinggi / Prioritas):</b> Prospek dengan minat sangat tinggi dan kelengkapan dokumen optimal, siap ditindaklanjuti untuk konversi segera.</li>
+                            <li>🔥 <b>Warm Leads (Sedang):</b> Prospek dengan ketertarikan sedang yang memerlukan <i>follow-up</i> tambahan.</li>
+                            <li>❄️ <b>Cold Leads (Rendah):</b> Prospek dengan aktivitas interaksi minim atau dokumen/pembayaran tertunda lama.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
         else:
             st.info("Kalkulasi segmentasi prioritas leads sedang diproses atau kosong.")
 
