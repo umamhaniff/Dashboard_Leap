@@ -694,7 +694,6 @@ if st.session_state.selected_source == 'overview':
             <p style="margin: 0 0 8px 0; font-weight: bold; color: #6366F1; font-size: 14.5px;">💡 Cara Membaca Tabel Analisis Terpadu:</p>
             <ul style="margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.5;">
                 <li><b>Skor Preferensi DSS (0.0 - 1.0):</b> Merepresentasikan <i>Unified Health & Behavior Index</i> siswa. Semakin mendekati <b>1.0</b>, kondisi akademis, kehadiran, dan perilaku belajar siswa dinilai semakin prima.</li>
-                <li><b>Peringkat:</b> Urutan kondisi belajar siswa. Peringkat 1 adalah siswa dengan kondisi terbaik/paling stabil (Safe). Peringkat terbawah menunjukkan prioritas intervensi yang paling mendesak (Kritis).</li>
                 <li><b>Kluster Risiko (K-Means Clustering):</b>
                     <ul>
                         <li>🔴 <b>Kritis (High Risk):</b> Kelompok siswa dengan tingkat kerentanan tertinggi, memerlukan tindakan bimbingan segera.</li>
@@ -839,7 +838,6 @@ elif st.session_state.selected_source == 'google_sheets':
                 <p style="margin: 0 0 8px 0; font-weight: bold; color: #6366F1; font-size: 14.5px;">💡 Cara Membaca Tabel Performa Akademik:</p>
                 <ul style="margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.5;">
                     <li><b>Skor Preferensi DSS (0.0 - 1.0):</b> Merepresentasikan <i>Academic & Attendance Health Index</i> siswa. Kriteria keuntungan (rerata nilai, kehadiran, kelulusan ujian) menaikkan skor, sedangkan keterlambatan menurunkannya. Semakin mendekati <b>1.0</b>, performa belajar dan kedisiplinan siswa semakin prima.</li>
-                    <li><b>Peringkat:</b> Urutan performa belajar dan kehadiran siswa. Peringkat 1 adalah siswa dengan performa paling aman. Peringkat terbawah menunjukkan prioritas bimbingan/pendampingan akademis yang paling mendesak (Risiko Tinggi).</li>
                     <li><b>Kluster Risiko (K-Means Clustering):</b>
                         <ul>
                             <li>🔴 <b>Risiko Tinggi (High Risk):</b> Siswa yang memerlukan pendampingan akademis intensif akibat nilai/kehadiran rendah.</li>
@@ -1082,7 +1080,6 @@ else:
                 <p style="margin: 0 0 8px 0; font-weight: bold; color: #6366F1; font-size: 14.5px;">💡 Cara Membaca Tabel Prioritas Leads:</p>
                 <ul style="margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.5;">
                     <li><b>Skor Preferensi DSS (0.0 - 1.0):</b> Merepresentasikan <i>Lead Conversion Potential Index</i>. Mengukur peluang calon siswa untuk mendaftar/membayar berdasarkan kelengkapan berkas, catatan interaksi FO, nominal transaksi awal, dan kecepatan konversi. Semakin mendekati <b>1.0</b>, potensi prospek tersebut semakin tinggi.</li>
-                    <li><b>Peringkat:</b> Urutan potensi konversi calon siswa. Peringkat 1 adalah calon siswa dengan peluang bergabung tertinggi (Hot Leads) yang memiliki prioritas utama untuk dihubungi oleh tim FO/Sales guna mematangkan konversi.</li>
                     <li><b>Kluster Prospek (K-Means Clustering):</b>
                         <ul>
                             <li>⚡ <b>Hot Leads (Tinggi / Prioritas):</b> Prospek dengan minat sangat tinggi dan kelengkapan dokumen optimal, siap ditindaklanjuti untuk konversi segera.</li>
