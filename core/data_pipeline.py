@@ -427,8 +427,8 @@ def generate_mock_mariadb_data() -> Dict[str, pd.DataFrame]:
     ])
 
     jadwal_df = pd.DataFrame([
-        {"id_jadwal": 1, "id_kursus": 1, "id_level": 1, "nama_kelas": "Coding Level 1", "periode": "Batch 1"},
-        {"id_jadwal": 2, "id_kursus": 2, "id_level": 2, "nama_kelas": "English Gogo 1", "periode": "Batch 1"}
+        {"id_jadwal": 1, "id_kursus": 1, "id_level": 1, "nama_kelas": "Coding Level 1", "periode": "Batch 1", "nama_rombel": "01 GOGO 1 SK1", "metode_belajar_jadwal": "Online", "tempat": "Zoom"},
+        {"id_jadwal": 2, "id_kursus": 2, "id_level": 2, "nama_kelas": "English Gogo 1", "periode": "Batch 1", "nama_rombel": "02 GOGO 1 SK2", "metode_belajar_jadwal": "Offline", "tempat": "Ruang 202"}
     ])
 
     jadwal_hari_df = pd.DataFrame([

@@ -1110,7 +1110,11 @@ else:
         with col2:
             st.markdown("#### Distribusi Program Rombel Aktif")
             if not jadwal_df.empty:
-                st.dataframe(jadwal_df[["nama_rombel", "metode_belajar_jadwal", "tempat"]], use_container_width=True, height=250)
+                cols_to_disp = [c for c in ["nama_rombel", "metode_belajar_jadwal", "tempat"] if c in jadwal_df.columns]
+                if cols_to_disp:
+                    st.dataframe(jadwal_df[cols_to_disp], use_container_width=True, height=250)
+                else:
+                    st.dataframe(jadwal_df, use_container_width=True, height=250)
             else:
                 st.info("Data rombel kosong.")
                 
