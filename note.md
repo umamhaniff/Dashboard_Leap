@@ -128,15 +128,15 @@ Aplikasi terhubung ke database `dataleap` pada port `3077` untuk membaca:
 ## 🎨 UI/UX Specifications (Genesis Design)
 
 Aplikasi menerapkan aturan desain **Genesis Design**:
-1. **Responsive MFA Login Form**: Form masuk memiliki lebar dinamis untuk memastikan pendekatan *Mobile First* (Maksimal `850px` pada layar desktop, `680px` pada tablet, dan `100%` pada layar mobile).
-2. **Sidebar Navigation**: Menggunakan `st.sidebar.radio` yang terintegrasi secara modular dengan menu overview, modul akademik, modul operasional web log, dan menu **Sign Out** terpadu di bagian paling bawah sidebar.
+1. **Responsive MFA Login Form**: Form masuk memiliki lebar dinamis untuk memastikan pendekatan *Mobile First* (Maksimal `850px` pada layar desktop, `680px` pada tablet, dan `100%` pada layar mobile). Menampilkan status koneksi Google Sheets & MariaDB (menampilkan status `No Local DB Connection` jika database offline).
+2. **Sidebar Navigation**: Menggunakan selectbox (`st.sidebar.selectbox`) yang terintegrasi secara dinamis. Jika database terdeteksi offline, opsi menu **Unified Overview** dan **Database SQL (Operations)** akan disembunyikan sepenuhnya dari pilihan navigasi dan halaman diarahkan secara otomatis ke **Google Sheets (Academic)** sebagai *default landing page*.
 
 ---
 
 ## 🔧 Troubleshooting
 
-### ❌ Error: "mysql.connector.errors.DatabaseError: 2003: Can't connect to MySQL server..."
-* **Solusi**: Pastikan server MariaDB lokal Anda aktif dan mendengarkan pada port **`3077`**. Jika Anda sedang menguji tanpa MariaDB, pastikan aplikasi masuk ke *Mock Engine mode* yang menyimulasikan data secara otomatis.
+### ❌ Error: "Status check - DB failed: (2003, ... Connection refused)"
+* **Solusi**: Pastikan database MariaDB lokal Anda aktif pada port yang sesuai (default `3307`). Jika dideploy di server seperti Streamlit Cloud dan database offline, aplikasi akan mendeteksi status offline secara dinamis, menampilkan label `No Local DB Connection` pada halaman masuk, serta menyembunyikan halaman **Unified Overview** dan **Database SQL (Operations)** secara otomatis pasca-login.
 
 ### ❌ Error: "API_KEY_INVALID" / Rate Limit 429
 * **Solusi**: Periksa validitas `GEMINI_API_KEY` pada file `.streamlit/secrets.toml`. Jika terkena batasan kuota (*Rate Limit*), sistem secara otomatis memicu *Multi-Model Failover* untuk bergeser mencari model cadangan yang aktif.
@@ -145,9 +145,9 @@ Aplikasi menerapkan aturan desain **Genesis Design**:
 
 ## 🆘 Git Branching & Combo Upload
 
-Aktivitas pengerjaan berada pada branch lokal `feature/dss-hybrid-mariadb-gsheets`. Selalu lakukan commit sesering mungkin untuk melacak perubahan Anda.
+Aktivitas pengerjaan berada pada branch lokal `feature/dss-hybrid`. Selalu lakukan commit sesering mungkin untuk melacak perubahan Anda.
 
 **Perintah Combo Upload (3-in-1)**:
 ```powershell
-git add . && git commit -m "feat: update documentation and system config for hybrid dss" && git push origin feature/dss-hybrid-mariadb-gsheets
+git add . && git commit -m "feat: implement dynamic navigation hiding and default landing page fallback when DB is offline" && git push origin feature/dss-hybrid
 ```

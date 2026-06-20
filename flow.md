@@ -119,11 +119,10 @@ Antarmuka EduDecision AI V2 menerapkan gaya visual **Genesis Design** dengan det
   * Layar Mobile: `width: 100%`
 
 ### 2. Dashboard Sidebar Navigation
-* Menggunakan `st.sidebar.radio` untuk navigasi antar halaman utama secara langsung.
-* Menu terdiri dari:
-  1. **Unified Overview**: Menampilkan KPI gabungan dan grafik visualisasi.
-  2. **Academic Dashboard**: Modul khusus data Google Sheets + Gemini Academic Engine.
-  3. **Operations Dashboard**: Modul khusus log MariaDB + Gemini Operations Engine.
+* Menggunakan selectbox (`st.sidebar.selectbox`) untuk navigasi antar halaman utama secara langsung.
+* Menu disaring secara dinamis berdasarkan status koneksi database:
+  * **Jika DB Online**: Menampilkan `Unified Overview` (Unified), `Academic Dashboard` (Sheets), dan `Operations Dashboard` (SQL).
+  * **Jika DB Offline**: Menyembunyikan menu `Unified Overview` dan `Operations Dashboard` sepenuhnya, hanya menyisakan `Academic Dashboard` (Sheets) dan diarahkan ke sana sebagai *default landing page* demi estetika visual dan stabilitas sistem.
 * Tombol **Sign Out** diletakkan di bagian paling bawah sidebar menggunakan modifikasi CSS kustom untuk memisahkan alur keluar secara logis.
 
 ### 3. Ekspor Laporan

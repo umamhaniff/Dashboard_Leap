@@ -1,10 +1,10 @@
-# 📑 PRODUCT REQUIREMENT DOCUMENT (PRD) - VERSION 2.1
+# 📑 PRODUCT REQUIREMENT DOCUMENT (PRD) - VERSION 2.0
 
 **Project Name:** EduDecision AI V2 - Hybrid Decision Support System (DSS)
 
 **Author:** Chotibul Umam Hanif (Data Analyst Intern / IS Student)
 
-**Status:** Updated with Dynamic Connection Hiding (Branch Development - Completed)
+**Status:** Updated (Branch Development - Pending Team Review)
 
 **Target Release:** June 2026
 
@@ -47,8 +47,8 @@ Proses pengambilan keputusan strategis terkait performa siswa, anomali kehadiran
    * **Gemini Academic Engine**: Menganalisis tingkat absensi, tren nilai, prediksi retensi siswa, dan rekomendasi mitigasi dropout.
    * **Gemini Operations Engine**: Mengaudit lalu lintas situs web, deteksi anomali akses (percobaan peretasan, lonjakan trafik tak wajar), dan log performa.
 3. **Estetika Visual Genesis Design**:
-   * **Halaman Login (MFA)**: Form login berbasis CSS dengan lebar responsif. Melebar secara dinamis hingga `850px` pada layar desktop (`min-width: 1200px`) dan `680px` pada tablet (`min-width: 768px`), namun tetap `100%` di layar mobile (MFA). Menampilkan status konektivitas Google Sheets & MariaDB (menampilkan status `No Local DB Connection` jika database offline).
-   * **Navigasi Utama (Dynamic Sidebar Selectbox)**: Menu navigasi menggunakan selectbox (`st.sidebar.selectbox`) yang memfilter opsi secara dinamis. Jika database terdeteksi offline, opsi menu **Unified Overview** dan **Database SQL (Operations)** akan disembunyikan sepenuhnya dari pilihan navigasi dan halaman diarahkan secara otomatis ke **Google Sheets: Absensi & Nilai** sebagai *default landing page*.
+   * **Halaman Login (MFA)**: Form login berbasis CSS dengan lebar responsif. Melebar secara dinamis hingga `850px` pada layar desktop (`min-width: 1200px`) dan `680px` pada tablet (`min-width: 768px`), namun tetap `100%` di layar mobile (MFA).
+   * **Navigasi Utama (Streamlit Sidebar)**: Menu navigasi terintegrasi menggunakan `st.sidebar.radio` untuk memilih modul aktif secara langsung, dilengkapi tombol **Sign Out** terintegrasi.
 4. **Data Preprocessing & Quality Engineering**: Pembersihan otomatis pola error spreadsheet (`#REF!`, `#VALUE!`, dsb) dan standardisasi tipe data sebelum diproses oleh model.
 5. **Multi-Model Failover Mechanism**: Logika pemanggilan beruntun model LLM (Gemini 3.1, Gemini 3.0, Gemini 2.5, hingga Gemma) apabila terjadi error status 429 pada salah satu engine.
 
@@ -81,7 +81,7 @@ Proses pengambilan keputusan strategis terkait performa siswa, anomali kehadiran
 
 #### Persona 3: LKP LEAP Management (The Decision Maker)
 * **Profil & Karakateristik:** Pengambil kebijakan yang membutuhkan kesimpulan ringkas, visual, dan akurat untuk menentukan arah bisnis dan akademis.
-* **User Story:** *"Sebagai pengambil kebijakan, saya ingin melihat ringkasan performa akademik lembaga serta audit operasional situs secara bersamaan agar dapat meluncurkan kampanye promosi dan program bimbingan belajar yang tepat sasaran."*
+* **User Story:** *"Sebagai pengambil kebijakan, saya ingin melihat ringkasan performa akademik lembaga serta audit operasional situs secara bersamaan agar dapat meluncurkan kampanye promosi dan program bimbingan belajar yang tepat saran."*
 * **Sistem Touchpoints:** Halaman *Unified LKP Overview (Dashboard)* dan hasil analisis ringkas dari kedua AI Engine.
 
 ---
@@ -160,10 +160,11 @@ Proses pengambilan keputusan strategis terkait performa siswa, anomali kehadiran
   * Desktop (`min-width: 1200px`): Maksimal lebar `850px`.
   * Tablet (`min-width: 768px`): Maksimal lebar `680px`.
   * Mobile: Lebar `100%`.
-* **Navigasi Utama**: Navigasi menggunakan selectbox (`st.sidebar.selectbox`) yang memfilter opsi secara dinamis berdasarkan status koneksi database:
-  * Jika DB Online: `🏠 Unified LKP Overview`, `📊 Google Sheets (Academic)`, `🗄️ Database SQL (Operations)`.
-  * Jika DB Offline: Hanya menampilkan `📊 Google Sheets (Academic)` dan menyembunyikan menu lainnya untuk menghindari tampilan mock/kosong.
-  * 🚪 Sign Out (tetap berada di bagian paling bawah sidebar).
+* **Navigasi Utama**: Navigasi menggunakan `st.sidebar.radio` yang terbagi ke dalam menu:
+  * 🏠 Unified LKP Overview
+  * 📊 Modul Akademik (Google Sheets)
+  * 🗄️ Modul Operasional (MariaDB web_statistik)
+  * 🚪 Sign Out (di bagian bawah sidebar)
 
 ---
 
@@ -173,12 +174,6 @@ Proses pengambilan keputusan strategis terkait performa siswa, anomali kehadiran
 
 * **FR-1.1:** Sistem harus menginisiasi koneksi aman ke database MariaDB pada port 3077 menggunakan *credentials* terenkripsi dari `secrets.toml`.
 * **FR-1.2:** Sistem harus memuat tabel `web_statistik` dan membatasi pembacaan memori agar tetap stabil di server lokal 8GB RAM menggunakan caching data `@st.cache_data(ttl=300)`.
-
-### 5.2 Input Flow 2: Google Sheets Connection (GCP)
-
-* **FR-2.1:** Sistem wajib terhubung ke Google Sheets menggunakan berkas kredensial Service Account GCP.
-* **FR-2.2:** Sistem harus memetakan lembar kerja target otomatis berdasar daftar `SHEET_NAMES` (`DATA_SISWA`, `DATA_ABSENSI`, `DATA_NILAI`, `DATA_KELUAR`, `DATA_OVERVIEW`).
-* **FR-2.3:** Pembersihan otomatis wajib dilakukan terhadap nilai-nilai tidak valid akibat kesalahan rumus spreadsheet hancur (`#REF!`, `#DIV/0!`).
 
 ### 5.3 Intelligence & Failover Flow (Gen AI Integration)
 
@@ -197,16 +192,15 @@ Proses pengambilan keputusan strategis terkait performa siswa, anomali kehadiran
 
 ### 6.1 Branching Workflow
 
-1. **Isolated Branch Active:** `feature/dss-hybrid`
+1. **Isolated Branch Active:** `feature/dss-hybrid-mariadb-gsheets`
 2. **Combo Upload Execution:**
 ```bash
-git add . && git commit -m "feat: implement dynamic navigation hiding and default landing page fallback when DB is offline" && git push origin feature/dss-hybrid
+git add . && git commit -m "feat: integrate dual-input pipeline mariadb 3077 & gsheets failover with genesis design" && git push origin feature/dss-hybrid-mariadb-gsheets
 ```
 
 ### 6.2 Pre-submission Checklist for Campus Project
 
-* [ ] Pastikan konfigurasi port MariaDB terkunci statis pada `3307` / `3077` di setup environment.
+* [ ] Pastikan konfigurasi port MariaDB terkunci statis pada `3077` di setup environment.
 * [ ] Uji coba tombol `Refresh Data` untuk memastikan fungsi `st.cache_data.clear()` bekerja optimal membersihkan sisa memori.
 * [ ] Pastikan file rahasia kredensial GCP (`service_account.json` & `secrets.toml`) masuk daftar `.gitignore` agar tidak bocor ke publik.
 * [ ] Lakukan verifikasi form login MFA responsif di berbagai resolusi layar.
-* [ ] Pastikan menu navigasi menyembunyikan modul SQL & Unified saat database dimatikan/offline dan label pada halaman login berubah menjadi `No Local DB Connection`.
