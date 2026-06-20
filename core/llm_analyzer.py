@@ -49,13 +49,20 @@ def get_academic_prompt(dataframes: dict) -> str:
         df = dataframes.get(name)
         if df is not None and not df.empty:
             combined += f"\n[TABEL: {name}]\n{df.head(40).to_string(index=False)}\n"
+            
+    # Augment with SAW Rankings
+    saw_df = dataframes.get("DATA_SAW_RANKING")
+    if saw_df is not None and not saw_df.empty:
+        combined += "\n=== SPK SAW & K-MEANS ACADEMIC HEALTH RANKING ===\n"
+        combined += "Keterangan Kluster: 0 = Risiko Tinggi (High Risk), 1 = Risiko Sedang, 2 = Aman.\n"
+        combined += f"{saw_df.to_string(index=False)}\n"
     
     return f"""Kamu adalah Academic Decision Support Assistant untuk LKP LEAP.
-Tugasmu adalah menganalisis data nilai siswa, sebaran grade, dan kasus remedi untuk memberikan rekomendasi evaluasi akademik.
+Tugasmu adalah menganalisis data nilai siswa, sebaran grade, kasus remedi, serta analisis prioritas penanganan berbasis perangkingan MADM SAW & Kluster K-Means untuk memberikan rekomendasi evaluasi akademik.
 Fokus Analisis:
-1. Identifikasi program/rombel dengan tingkat remedi tertinggi.
+1. Identifikasi siswa/rombel dengan tingkat remedi tertinggi. Terangkan siswa mana yang menempati peringkat SAW terendah (Risiko Tinggi / Kluster 0) dan apa penyebab utamanya.
 2. Analisis korelasi antara kehadiran dengan pencapaian nilai (grade).
-3. Berikan usulan perbaikan pembelajaran yang konkret untuk siswa remedi.
+3. Berikan usulan perbaikan pembelajaran yang konkret untuk siswa remedi dan program pembinaan prioritas.
 
 Data Input:
 {combined}
@@ -69,12 +76,20 @@ def get_operations_prompt(dataframes: dict) -> str:
         if df is not None and not df.empty:
             combined += f"\n[TABEL: {name}]\n{df.head(100).to_string(index=False)}\n"
             
-    return f"""Kamu adalah SQL Database Website Traffic Auditor untuk LKP LEAP.
-Tugasmu menganalisis log statistik pengunjung website untuk mendeteksi tren trafik, pola akses, dan potensi anomali/keamanan akses demi kenyamanan belajar online SISWA.
+    # Augment with leads prioritization
+    saw_leads = dataframes.get("DB_SAW_LEADS")
+    if saw_leads is not None and not saw_leads.empty:
+        combined += "\n=== SPK SAW & K-MEANS LEADS CONVERSION PRIORITIZATION ===\n"
+        combined += "Keterangan Kluster: 0 = Cold Leads (Rendah), 1 = Warm Leads, 2 = Hot Leads (Prioritas Tinggi).\n"
+        combined += f"{saw_leads.to_string(index=False)}\n"
+            
+    return f"""Kamu adalah SQL Database Website Traffic Auditor dan SPK Prospek Analyst untuk LKP LEAP.
+Tugasmu menganalisis log statistik pengunjung website serta menganalisis data leads calon SISWA baru menggunakan hasil perangkingan SAW & Kluster K-Means untuk meningkatkan pendaftaran.
 Fokus Analisis:
 1. Analisis tren trafik: Hitung total views, unique IPs, dan rata-rata page views per sesi.
 2. Deteksi Anomali Keamanan: Temukan apakah ada IP Address yang melakukan akses berlebihan (high page views) dalam satu sesi (potensi bot/scraping).
-3. Berikan rekomendasi operasional dan keamanan website untuk meningkatkan performa server dan keamanan akses website LKP LEAP.
+3. Prioritas Calon Siswa (Leads): Analisis data perangkingan SAW Leads. Berikan saran tindak lanjut khusus untuk calon siswa yang masuk kategori Hot Leads (Kluster 2) agar konversi pendaftaran maksimal.
+4. Berikan rekomendasi operasional dan keamanan website untuk meningkatkan performa server dan keamanan akses website LKP LEAP.
 
 Data Input:
 {combined}
@@ -272,19 +287,27 @@ def get_unified_overview_prompt(combined_data: dict) -> str:
             cases_count = len(catatan_df[catatan_df["status_followup"] == "NEED FURTHER OBSERVATION"])
         else:
             cases_count = len(catatan_df)
+            
+    # Augment with Unified Intervensi Siswa
+    saw_unified = db_data.get("UNIFIED_SAW")
+    saw_str = ""
+    if saw_unified is not None and not saw_unified.empty:
+        saw_str = "\n=== SPK SAW & K-MEANS UNIFIED INTERVENTION RANKING ===\n"
+        saw_str += "Keterangan Kluster: 0 = Intervensi Kritis (Prioritas Utama), 1 = Dalam Observasi, 2 = Stabil.\n"
+        saw_str += f"{saw_unified.to_string(index=False)}\n"
     
     return f"""Kamu adalah Principal Educational Director & Executive Auditor LKP LEAP Surabaya.
-Analisis data kinerja institusi LKP LEAP berikut secara menyeluruh (gabungan data akademik Sheets dan operasional Database):
+Analisis data kinerja institusi LKP LEAP berikut secara menyeluruh (gabungan data akademik Sheets dan operasional Database) dengan dukungan perangkingan DSS Unified:
 
 [RINGKASAN EKSEKUTIF]
 - Total Siswa Terdaftar (Sheets): {total_siswa}
 - Siswa Aktif (Database): {total_active}
-- Rata-rata Nilai Akhir Siswa: {avg_final:.2f}
+- Rata-rata Nilai Ujian Akhir Siswa: {avg_final:.2f}
 - Jumlah Kasus Observasi CS Terbuka: {cases_count}
-
+{saw_str}
 Tugas:
 1. Berikan evaluasi kinerja makro LKP LEAP yang memadukan data akademik (keberhasilan nilai) dan data operasional (kondisi CS/staf pendukung).
-2. Identifikasi apakah ada kendala koordinasi atau penurunan retensi siswa secara makro.
+2. Analisis data Perangkingan Intervensi Unified SAW. Sebutkan siswa mana yang masuk dalam kategori Intervensi Kritis (Kluster 0) yang memerlukan tindakan koordinasi cepat antara tim Akademik dan Customer Service.
 3. Berikan 3 rekomendasi taktis eksekutif untuk meningkatkan kualitas layanan pendidikan dan operasional LKP LEAP.
 """
 
