@@ -32,6 +32,11 @@ local_css("styles/style.css")
 # --- INITIALIZE SESSION STATE ---
 @st.cache_data(ttl=60)
 def check_connection_statuses():
+    import socket
+    # Set default timeout to 5 seconds to prevent hanging on firewalled/slow networks
+    old_timeout = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(5.0)
+    
     # Check sheets
     sheets_ok = False
     try:
@@ -62,6 +67,8 @@ def check_connection_statuses():
         import logging
         logging.getLogger(__name__).error(f"Status check - DB failed: {e}")
         
+    # Restore original timeout
+    socket.setdefaulttimeout(old_timeout)
     return sheets_ok, db_ok
 
 # --- SIDEBAR DEBUG ---

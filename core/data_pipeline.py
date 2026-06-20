@@ -26,6 +26,8 @@ logger = logging.getLogger(__name__)
 def authenticate_google_sheets() -> gspread.client.Client:
     """Authenticate with Google Sheets API using service account."""
     try:
+        import socket
+        socket.setdefaulttimeout(15.0)
         creds = None
 
         if hasattr(st, 'secrets'):
