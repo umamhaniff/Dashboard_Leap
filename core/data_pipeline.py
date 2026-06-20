@@ -290,6 +290,12 @@ def clean_all_data(dataframes: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFram
         cleaned_data[sheet_name] = df_clean
         logger.info(f"Cleaned {sheet_name}: {len(df)} -> {len(df_clean)} rows")
 
+    try:
+        sheets_saw = calculate_sheets_saw_kmeans(cleaned_data)
+        cleaned_data["DATA_SAW_RANKING"] = sheets_saw
+    except Exception as e:
+        logger.error(f"Failed to calculate Sheets SAW ranking: {str(e)}")
+
     return cleaned_data
 
 def get_data_quality_report(dataframes: Dict[str, pd.DataFrame]) -> Dict[str, Any]:
@@ -475,7 +481,7 @@ def generate_mock_mariadb_data() -> Dict[str, pd.DataFrame]:
         {"id_verifikasi_izin": 1, "id_izin": 1, "status_verifikasi_izin": "Approved", "catatan_verifikator": "Verified"}
     ])
 
-    return {
+    mock_data = {
         "siswa": siswa_df,
         "kursus_siswa": kursus_siswa_df,
         "jadwal_siswa": jadwal_siswa_df,
@@ -501,6 +507,14 @@ def generate_mock_mariadb_data() -> Dict[str, pd.DataFrame]:
         "izin_karyawan": izin_karyawan_df,
         "verifikasi_izin": verifikasi_izin_df
     }
+
+    try:
+        mock_data["DB_SAW_LEADS"] = calculate_db_saw_kmeans(mock_data)
+        mock_data["UNIFIED_SAW"] = calculate_unified_saw_kmeans(mock_data, mock_data)
+    except Exception as e:
+        logger.error(f"Failed to calculate Mock DB SAW: {str(e)}")
+
+    return mock_data
 
 def load_mariadb_data() -> Dict[str, pd.DataFrame]:
     """Membaca data dari MariaDB atau fallback ke Mock jika gagal."""
@@ -531,6 +545,12 @@ def load_mariadb_data() -> Dict[str, pd.DataFrame]:
                 if result["siswa"].empty:
                     logger.warning("Database connected but 'siswa' table is empty. Falling back to mock data engine.")
                     return generate_mock_mariadb_data()
+
+                try:
+                    result["DB_SAW_LEADS"] = calculate_db_saw_kmeans(result)
+                    result["UNIFIED_SAW"] = calculate_unified_saw_kmeans(generate_mock_mariadb_data(), result)
+                except Exception as e:
+                    logger.error(f"Failed to calculate DB SAW: {str(e)}")
 
                 return result
         finally:
@@ -641,4 +661,205 @@ def apply_kmeans_risk(df: pd.DataFrame, features: List[str], n_clusters: int = 3
     if not has_saw_score:
         df_copy = df_copy.drop(columns=["saw_score"])
         
-    return df_copy
+    return df_copy
+
+
+def calculate_sheets_saw_kmeans(cleaned_sheets: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Calculates SAW and clusters active students from Sheets data."""
+    siswa_df = cleaned_sheets.get("DATA_SISWA", pd.DataFrame())
+    if siswa_df.empty and "siswa" in cleaned_sheets:
+        db_siswa = cleaned_sheets["siswa"].copy()
+        if "nama_lengkap" in db_siswa.columns:
+            db_siswa.rename(columns={"nama_lengkap": "nama_siswa"}, inplace=True)
+        siswa_df = db_siswa
+        
+    nilai_df = cleaned_sheets.get("DATA_NILAI", pd.DataFrame())
+    if nilai_df.empty and "catatan_remidi_siswa" in cleaned_sheets:
+        db_remidi = cleaned_sheets["catatan_remidi_siswa"].copy()
+        if "nilai_sesudah" in db_remidi.columns:
+            db_remidi["score"] = db_remidi["nilai_sesudah"]
+        if "siswa" in cleaned_sheets and "nama_siswa" not in db_remidi.columns:
+            db_siswa = cleaned_sheets["siswa"].copy()
+            if "nama_lengkap" in db_siswa.columns:
+                db_siswa.rename(columns={"nama_lengkap": "nama_siswa"}, inplace=True)
+            db_remidi = db_remidi.merge(db_siswa[["id_siswa", "nama_siswa"]], on="id_siswa", how="left")
+        nilai_df = db_remidi
+        
+    absensi_df = cleaned_sheets.get("DATA_ABSENSI", pd.DataFrame())
+    if absensi_df.empty and "absensi" in cleaned_sheets:
+        db_abs = cleaned_sheets["absensi"].copy()
+        if "status_absensi" in db_abs.columns:
+            db_abs.rename(columns={"status_absensi": "status"}, inplace=True)
+        if "users" in cleaned_sheets and "nama_siswa" not in db_abs.columns:
+            db_users = cleaned_sheets["users"].copy()
+            if "nama_karyawan" in db_users.columns:
+                db_users.rename(columns={"nama_karyawan": "nama_siswa"}, inplace=True)
+            db_abs = db_abs.merge(db_users[["id_user", "nama_siswa"]], left_on="id_karyawan", right_on="id_user", how="left")
+        absensi_df = db_abs
+        
+    if siswa_df.empty:
+        return pd.DataFrame(columns=["nama_siswa", "saw_score", "saw_rank", "risk_cluster"])
+        
+    # Standardize names
+    df = pd.DataFrame({"nama_siswa": siswa_df["nama_siswa"].unique()})
+    
+    # Feature 1: Average Score
+    if not nilai_df.empty and "nama_siswa" in nilai_df.columns and "score" in nilai_df.columns:
+        avg_scores = nilai_df.groupby("nama_siswa")["score"].mean().reset_index()
+        df = df.merge(avg_scores, on="nama_siswa", how="left")
+    else:
+        df["score"] = 70.0
+    df["score"] = df["score"].fillna(70.0)
+    
+    # Feature 2 & 4: Attendance Rate & Tardiness
+    if not absensi_df.empty and "nama_siswa" in absensi_df.columns:
+        absensi_df_copy = absensi_df.copy()
+        absensi_df_copy["status_lower"] = absensi_df_copy["status"].astype(str).str.lower().str.strip()
+        absensi_df_copy["hadir_num"] = absensi_df_copy["status_lower"].isin(["tepat waktu", "terlambat", "hadir"]).astype(int)
+        absensi_df_copy["late_num"] = absensi_df_copy["status_lower"].str.contains("lambat").astype(int)
+        
+        att_rate = absensi_df_copy.groupby("nama_siswa")["hadir_num"].mean().reset_index()
+        att_rate["hadir_num"] = att_rate["hadir_num"] * 100
+        att_rate.rename(columns={"hadir_num": "attendance_rate"}, inplace=True)
+        
+        late_count = absensi_df_copy.groupby("nama_siswa")["late_num"].sum().reset_index()
+        late_count.rename(columns={"late_num": "late_count"}, inplace=True)
+        
+        df = df.merge(att_rate, on="nama_siswa", how="left")
+        df = df.merge(late_count, on="nama_siswa", how="left")
+    else:
+        df["attendance_rate"] = 90.0
+        df["late_count"] = 0.0
+    df["attendance_rate"] = df["attendance_rate"].fillna(90.0)
+    df["late_count"] = df["late_count"].fillna(0.0)
+    
+    # Feature 3: Passing Rate (Exams > 70)
+    if not nilai_df.empty and "nama_siswa" in nilai_df.columns and "score" in nilai_df.columns:
+        nilai_df_copy = nilai_df.copy()
+        nilai_df_copy["is_tuntas"] = (nilai_df_copy["score"] > 70).astype(int)
+        tuntas_rate = nilai_df_copy.groupby("nama_siswa")["is_tuntas"].mean().reset_index()
+        tuntas_rate.rename(columns={"is_tuntas": "passing_rate"}, inplace=True)
+        df = df.merge(tuntas_rate, on="nama_siswa", how="left")
+    else:
+        df["passing_rate"] = 1.0
+    df["passing_rate"] = df["passing_rate"].fillna(1.0)
+    
+    # Execute SAW (Academic settings)
+    criteria = ["score", "attendance_rate", "passing_rate", "late_count"]
+    weights = {"score": 0.40, "attendance_rate": 0.30, "passing_rate": 0.20, "late_count": 0.10}
+    types = {"score": "benefit", "attendance_rate": "benefit", "passing_rate": "benefit", "late_count": "cost"}
+    
+    saw_df = calculate_saw(df, criteria, weights, types)
+    return apply_kmeans_risk(saw_df, ["saw_score", "score", "attendance_rate"])
+
+def calculate_db_saw_kmeans(db_data: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Calculates SAW and clusters prospective student leads from MariaDB."""
+    calon_df = db_data.get("calon_siswa", pd.DataFrame())
+    bayar_df = db_data.get("calon_siswa_bayar", pd.DataFrame())
+    akad_df = db_data.get("calon_siswa_akademik", pd.DataFrame())
+    
+    if calon_df.empty:
+        return pd.DataFrame(columns=["nama_lengkap", "saw_score", "saw_rank", "risk_cluster"])
+        
+    df = calon_df[["id_calon", "nama_lengkap", "fo_status"]].copy()
+    df["is_fo_lengkap"] = (df["fo_status"] == "Lengkap").astype(int)
+    
+    # Amount Paid
+    if not bayar_df.empty and not akad_df.empty:
+        leads_payment = akad_df.merge(bayar_df, on="id_calon_akademik", how="inner")
+        payment_sum = leads_payment.groupby("id_calon")["jumlah_bayar"].sum().reset_index()
+        df = df.merge(payment_sum, on="id_calon", how="left")
+    else:
+        df["jumlah_bayar"] = 0.0
+    df["jumlah_bayar"] = df["jumlah_bayar"].fillna(0.0)
+    
+    # FO comment length (Interest intensity proxy)
+    fo_detail = db_data.get("calon_siswa_fo_detail", pd.DataFrame())
+    if not fo_detail.empty and "catatan_awal_fo" in fo_detail.columns:
+        fo_detail_copy = fo_detail.copy()
+        fo_detail_copy["notes_len"] = fo_detail_copy["catatan_awal_fo"].astype(str).str.len()
+        comment_len = fo_detail_copy.groupby("id_calon")["notes_len"].max().reset_index()
+        df = df.merge(comment_len, on="id_calon", how="left")
+    else:
+        df["notes_len"] = 0.0
+    df["notes_len"] = df["notes_len"].fillna(0.0)
+    
+    # Speed to confirm payment (days)
+    df["days_to_pay"] = 30.0  # Default slow conversion penalty
+    if not bayar_df.empty and not akad_df.empty:
+        leads_payment = akad_df.merge(bayar_df, on="id_calon_akademik", how="inner")
+        leads_payment = leads_payment.merge(calon_df, on="id_calon", how="inner")
+        
+        if "created_at" in leads_payment.columns and "tanggal_konfirmasi_bayar" in leads_payment.columns:
+            leads_payment["created_dt"] = pd.to_datetime(leads_payment["created_at"], errors="coerce")
+            leads_payment["pay_dt"] = pd.to_datetime(leads_payment["tanggal_konfirmasi_bayar"], errors="coerce")
+            
+            leads_payment["speed"] = (leads_payment["pay_dt"] - leads_payment["created_dt"]).dt.total_seconds() / (24 * 3600)
+            leads_payment["speed"] = leads_payment["speed"].clip(0, 90).fillna(30.0)
+            
+            speed_df = leads_payment.groupby("id_calon")["speed"].min().reset_index()
+            speed_df.rename(columns={"speed": "days_to_pay"}, inplace=True)
+            
+            # Drop temporary default
+            df.drop(columns=["days_to_pay"], inplace=True)
+            df = df.merge(speed_df, on="id_calon", how="left")
+        
+    df["days_to_pay"] = df["days_to_pay"].fillna(30.0)
+    
+    # Run SAW
+    criteria = ["jumlah_bayar", "is_fo_lengkap", "notes_len", "days_to_pay"]
+    weights = {"jumlah_bayar": 0.40, "is_fo_lengkap": 0.30, "notes_len": 0.10, "days_to_pay": 0.20}
+    types = {"jumlah_bayar": "benefit", "is_fo_lengkap": "benefit", "notes_len": "benefit", "days_to_pay": "cost"}
+    
+    saw_df = calculate_saw(df, criteria, weights, types)
+    return apply_kmeans_risk(saw_df, ["saw_score", "jumlah_bayar", "is_fo_lengkap"])
+
+def calculate_unified_saw_kmeans(cleaned_sheets: Dict[str, pd.DataFrame], db_data: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Calculates Unified SAW and clusters students combining Sheets Academics & SQL CS records."""
+    sheets_siswa = calculate_sheets_saw_kmeans(cleaned_sheets)
+    db_siswa = db_data.get("siswa", pd.DataFrame())
+    catatan_cs = db_data.get("catatan_siswa", pd.DataFrame())
+    
+    if sheets_siswa.empty:
+        return pd.DataFrame(columns=["nama_siswa", "saw_score", "saw_rank", "risk_cluster"])
+        
+    df = sheets_siswa[["nama_siswa", "score", "attendance_rate"]].copy()
+    df.rename(columns={"score": "academic_score"}, inplace=True)
+    
+    # Map Names to Database IDs
+    df["id_siswa"] = np.nan
+    if not db_siswa.empty and "nama_lengkap" in db_siswa.columns:
+        # Simple name normalization mapping
+        db_siswa_copy = db_siswa.copy()
+        db_siswa_copy["clean_name"] = db_siswa_copy["nama_lengkap"].astype(str).str.lower().str.strip()
+        df["clean_name"] = df["nama_siswa"].astype(str).str.lower().str.strip()
+        
+        mapped = df.merge(db_siswa_copy[["id_siswa", "clean_name"]], on="clean_name", how="left")
+        df["id_siswa"] = mapped["id_siswa"]
+        df.drop(columns=["clean_name"], inplace=True)
+        
+    df["has_critical_notes"] = 0.0
+    df["total_notes"] = 0.0
+    
+    if not catatan_cs.empty and "id_siswa" in catatan_cs.columns:
+        catatan_cs_copy = catatan_cs.copy()
+        catatan_cs_copy["is_critical"] = (catatan_cs_copy["status_followup"] == "NEED FURTHER OBSERVATION").astype(int)
+        
+        crit = catatan_cs_copy.groupby("id_siswa")["is_critical"].max().reset_index()
+        total = catatan_cs_copy.groupby("id_siswa")["is_critical"].count().reset_index()
+        total.rename(columns={"is_critical": "total_notes"}, inplace=True)
+        
+        df = df.merge(crit, on="id_siswa", how="left")
+        df = df.merge(total, on="id_siswa", how="left")
+        
+        df["has_critical_notes"] = df["is_critical"].fillna(0.0)
+        df["total_notes"] = df["total_notes"].fillna(0.0)
+        df.drop(columns=["is_critical"], inplace=True)
+        
+    # Run SAW
+    criteria = ["academic_score", "attendance_rate", "has_critical_notes", "total_notes"]
+    weights = {"academic_score": 0.40, "attendance_rate": 0.30, "has_critical_notes": 0.20, "total_notes": 0.10}
+    types = {"academic_score": "benefit", "attendance_rate": "benefit", "has_critical_notes": "cost", "total_notes": "cost"}
+    
+    saw_df = calculate_saw(df, criteria, weights, types)
+    return apply_kmeans_risk(saw_df, ["saw_score", "academic_score", "attendance_rate"])

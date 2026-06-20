@@ -57,4 +57,57 @@ def test_apply_kmeans_risk_missing_saw_score_fallback():
     assert result.loc[1, "risk_cluster"] == 1
     assert result.loc[2, "risk_cluster"] == 2
 
+def test_sku_specific_saw_kmeans():
+    from core.data_pipeline import (
+        calculate_sheets_saw_kmeans,
+        calculate_db_saw_kmeans,
+        calculate_unified_saw_kmeans
+    )
+    # Mock inputs
+    sheets_mock = {
+        "DATA_SISWA": pd.DataFrame([{"nama_siswa": "A"}, {"nama_siswa": "B"}]),
+        "DATA_NILAI": pd.DataFrame([
+            {"nama_siswa": "A", "periode": "Mid", "score": 80.0},
+            {"nama_siswa": "B", "periode": "Mid", "score": 60.0}
+        ]),
+        "DATA_ABSENSI": pd.DataFrame([
+            {"nama_siswa": "A", "status": "Hadir"},
+            {"nama_siswa": "B", "status": "Sakit"}
+        ]),
+        "DATA_KELUAR": pd.DataFrame([])
+    }
+    
+    db_mock = {
+        "calon_siswa": pd.DataFrame([
+            {"id_calon": 1, "nama_lengkap": "Calon A", "fo_status": "Lengkap"},
+            {"id_calon": 2, "nama_lengkap": "Calon B", "fo_status": "Belum Lengkap"}
+        ]),
+        "calon_siswa_bayar": pd.DataFrame([
+            {"id_calon_akademik": 1, "jumlah_bayar": 500000.0, "tanggal_konfirmasi_bayar": "2026-06-05 09:00:00"},
+            {"id_calon_akademik": 2, "jumlah_bayar": 100000.0, "tanggal_konfirmasi_bayar": "2026-06-07 10:00:00"}
+        ]),
+        "calon_siswa_akademik": pd.DataFrame([
+            {"id_calon_akademik": 1, "id_calon": 1},
+            {"id_calon_akademik": 2, "id_calon": 2}
+        ]),
+        "siswa": pd.DataFrame([]),
+        "catatan_siswa": pd.DataFrame([])
+    }
+    
+    # 1. Sheets SAW
+    sheets_res = calculate_sheets_saw_kmeans(sheets_mock)
+    assert "saw_score" in sheets_res.columns
+    assert "risk_cluster" in sheets_res.columns
+    
+    # 2. Database SAW
+    db_res = calculate_db_saw_kmeans(db_mock)
+    assert "saw_score" in db_res.columns
+    assert "risk_cluster" in db_res.columns
+    
+    # 3. Unified SAW
+    unified_res = calculate_unified_saw_kmeans(sheets_mock, db_mock)
+    assert "saw_score" in unified_res.columns
+    assert "risk_cluster" in unified_res.columns
+
+
 
