@@ -49,11 +49,11 @@ Gunakan perintah-perintah berikut untuk pengujian dan pengembangan proyek ini:
 
 ## 🎨 Desain & UI/UX (Genesis Design)
 Sistem menggunakan **Genesis Design** dengan spesifikasi berikut:
-*   **Halaman Login (MFA)**: Form login berbasis CSS dengan lebar responsif. Melebar secara dinamis hingga `850px` pada layar desktop (`min-width: 1200px`) dan `680px` pada tablet (`min-width: 768px`), namun tetap `100%` di layar mobile (Mobile First Approach / MFA).
-*   **Navigasi Utama (Streamlit Sidebar)**: Menu navigasi menggunakan sidebar bawaan Streamlit (`st.sidebar.radio`) untuk memilih modul data aktif secara langsung, dilengkapi tombol **Sign Out** terintegrasi.
+*   **Halaman Login (MFA)**: Form login berbasis CSS dengan lebar responsif. Melebar secara dinamis hingga `850px` pada layar desktop (`min-width: 1200px`) dan `680px` pada tablet (`min-width: 768px`), namun tetap `100%` di layar mobile (Mobile First Approach / MFA). Menampilkan indikator status koneksi Google Sheets dan MariaDB (jika offline, berstatus `No Local DB Connection`).
+*   **Navigasi Utama (Dynamic Menu & Fallback)**: Menu navigasi utama di sidebar menggunakan selectbox (`st.sidebar.selectbox`). Jika database offline, menu *Unified Overview* dan *Database SQL* otomatis disembunyikan dan navigasi diarahkan ke *Google Sheets (Academic)* sebagai *landing page* utama.
 
 ---
 
 ## 🚦 Status Branch & Kolaborasi
-*   **Branch Aktif**: `feature/dss-hybrid-mariadb-gsheets`
+*   **Branch Aktif**: `feature/dss-hybrid`
 *   **Aturan Commit**: Commit sesering mungkin untuk setiap unit task yang berhasil diselesaikan dan lolos uji unit test.
