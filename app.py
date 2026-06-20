@@ -100,10 +100,16 @@ def display_sidebar_debug(cleaned_data):
 
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
+if 'db_connected' not in st.session_state:
+    _, db_ok = check_connection_statuses()
+    st.session_state.db_connected = db_ok
 if 'selected_source' not in st.session_state or st.session_state.selected_source is None:
-    st.session_state.selected_source = 'overview'
+    if st.session_state.get('db_connected', False):
+        st.session_state.selected_source = 'overview'
+    else:
+        st.session_state.selected_source = 'google_sheets'
 if 'selected_feature' not in st.session_state:
-    st.session_state.selected_feature = 'unified_lkp'
+    st.session_state.selected_feature = 'unified_lkp' if st.session_state.get('db_connected', False) else 'academic_perf'
 if 'run_analysis' not in st.session_state:
     st.session_state.run_analysis = False
 if 'analysis_result' not in st.session_state:
@@ -146,6 +152,7 @@ if not st.session_state.logged_in:
         
         # Get real statuses
         sheets_ok, db_ok = check_connection_statuses()
+        st.session_state.db_connected = db_ok  # Sync latest db status to session state
         
         percentage_text = "100% READY" if (sheets_ok and db_ok) else ("50% PARTIAL" if (sheets_ok or db_ok) else "DISCONNECTED")
         percentage_class = " " if (sheets_ok and db_ok) else (" partial" if (sheets_ok or db_ok) else " disconnected")
@@ -161,7 +168,7 @@ if not st.session_state.logged_in:
         db_badge = "Online" if db_ok else "Offline"
         db_badge_class = "connected" if db_ok else "disconnected"
         db_card_class = "connected" if db_ok else "disconnected"
-        db_meta = "● Active Logs OK" if db_ok else "● Using Mock Data"
+        db_meta = "● Active Logs OK" if db_ok else "● No Local DB Connection"
         db_meta_class = "connected" if db_ok else "disconnected"
         
         st.markdown(
@@ -221,11 +228,22 @@ st.sidebar.markdown('<h3 style="text-align: center; font-family: General Sans, s
 st.sidebar.markdown('<p style="text-align: center; color: var(--text-color); opacity: 0.7; font-size: 12px; margin-bottom: 20px;">Sistem Analisis Keputusan LKP LEAP</p>', unsafe_allow_html=True)
 st.sidebar.markdown('---')
 
+# Enforce source fallback if DB is offline
+if not st.session_state.get('db_connected', False) and st.session_state.selected_source in ['overview', 'mariadb']:
+    st.session_state.selected_source = 'google_sheets'
+
 # 1. Main Module Selector
+if st.session_state.get('db_connected', False):
+    menu_options = ["🏠 Unified LKP Overview", "📊 Google Sheets (Academic)", "🗄️ Database SQL (Operations)"]
+    menu_index = 0 if st.session_state.selected_source == 'overview' else (1 if st.session_state.selected_source == 'google_sheets' else 2)
+else:
+    menu_options = ["📊 Google Sheets (Academic)"]
+    menu_index = 0
+
 selected_source_label = st.sidebar.selectbox(
     "Pilih Sumber Data:",
-    ["🏠 Unified LKP Overview", "📊 Google Sheets (Academic)", "🗄️ Database SQL (Operations)"],
-    index=0 if st.session_state.selected_source == 'overview' else (1 if st.session_state.selected_source == 'google_sheets' else 2)
+    menu_options,
+    index=menu_index
 )
 
 if "Unified" in selected_source_label:
