@@ -1,5 +1,4 @@
 from core.data_pipeline import load_mariadb_data, calculate_saw, apply_kmeans_risk
-import numpy as np
 import pandas as pd
 
 def test_load_mariadb_data():
@@ -36,4 +35,26 @@ def test_apply_kmeans_risk():
     c0_mean = result[result["risk_cluster"] == 0]["saw_score"].mean()
     c2_mean = result[result["risk_cluster"] == 2]["saw_score"].mean()
     assert c0_mean < c2_mean
+
+def test_calculate_saw_missing_config_raises_value_error():
+    import pytest
+    data = pd.DataFrame([{"id": 1, "c1": 80.0}])
+    criteria = ["c1"]
+    
+    with pytest.raises(ValueError, match="types"):
+        calculate_saw(data, criteria, weights={}, types={})
+        
+    with pytest.raises(ValueError, match="weights"):
+        calculate_saw(data, criteria, weights={}, types={"c1": "benefit"})
+
+def test_apply_kmeans_risk_missing_saw_score_fallback():
+    data = pd.DataFrame({
+        "feature1": [10, 50, 95]
+    })
+    result = apply_kmeans_risk(data, ["feature1"], n_clusters=3)
+    assert "risk_cluster" in result.columns
+    assert result.loc[0, "risk_cluster"] == 0
+    assert result.loc[1, "risk_cluster"] == 1
+    assert result.loc[2, "risk_cluster"] == 2
+
 

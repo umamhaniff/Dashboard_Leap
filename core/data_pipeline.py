@@ -541,6 +541,13 @@ def load_mariadb_data() -> Dict[str, pd.DataFrame]:
 
 
 def calculate_saw(df: pd.DataFrame, criteria: List[str], weights: Dict[str, float], types: Dict[str, str]) -> pd.DataFrame:
+    # Validate criteria configuration
+    for c in criteria:
+        if c not in types:
+            raise ValueError(f"Criterion '{c}' must be specified in the 'types' configuration.")
+        if c not in weights:
+            raise ValueError(f"Criterion '{c}' must be specified in the 'weights' configuration.")
+
     if df.empty:
         df_copy = df.copy()
         df_copy["saw_score"] = 0.0
@@ -558,23 +565,34 @@ def calculate_saw(df: pd.DataFrame, criteria: List[str], weights: Dict[str, floa
         max_val = series.max()
         min_val = series.min()
         
-        if types[c] == "benefit":
+        c_type = types.get(c, "benefit")
+        if c_type == "benefit":
             if max_val > 0:
                 norm_matrix[c] = series / max_val
             else:
                 norm_matrix[c] = 0.0
-        else:  # cost
+        elif c_type == "cost":
             norm_matrix[c] = (min_val + 1.0) / (series + 1.0)
+        else:
+            raise ValueError(f"Unknown criterion type '{c_type}' for '{c}'. Must be 'benefit' or 'cost'.")
             
     saw_score = np.zeros(len(df_copy))
     for c in criteria:
-        saw_score += norm_matrix[c].values * weights[c]
+        saw_score += norm_matrix[c].values * weights.get(c, 0.0)
         
     df_copy["saw_score"] = saw_score
     df_copy["saw_rank"] = df_copy["saw_score"].rank(ascending=False, method="min").astype(int)
     return df_copy
 
 def apply_kmeans_risk(df: pd.DataFrame, features: List[str], n_clusters: int = 3) -> pd.DataFrame:
+    """
+    Applies K-Means clustering to rank risks.
+    
+    This function depends on the 'saw_score' column for sorting cluster risk levels
+    (where cluster 0 is High Risk / lowest mean SAW score, and cluster n_clusters-1 is Low Risk / highest mean SAW).
+    If 'saw_score' is not present in the input DataFrame, the first feature in the features list
+    will be used as a proxy for sorting risk, and the temporary 'saw_score' column will be dropped before returning.
+    """
     if df.empty:
         df_copy = df.copy()
         df_copy["risk_cluster"] = 0
@@ -583,17 +601,26 @@ def apply_kmeans_risk(df: pd.DataFrame, features: List[str], n_clusters: int = 3
     df_copy = df.copy()
     n_samples = len(df_copy)
     
+    # Graceful fallback/safety check for 'saw_score' dependency
+    has_saw_score = "saw_score" in df_copy.columns
+    if not has_saw_score:
+        if features:
+            df_copy["saw_score"] = pd.to_numeric(df_copy[features[0]], errors="coerce").fillna(0.0)
+        else:
+            df_copy["saw_score"] = 0.0
+            
     if n_samples < n_clusters:
         sorted_indices = df_copy["saw_score"].argsort()
         clusters = np.zeros(n_samples, dtype=int)
-        for i, idx in enumerate(sorted_indices):
-            if i < n_samples / 3:
-                clusters[idx] = 0
-            elif i < 2 * n_samples / 3:
-                clusters[idx] = 1
+        for rank, idx in enumerate(sorted_indices):
+            if n_samples == 1:
+                clusters[idx] = (n_clusters - 1) // 2
             else:
-                clusters[idx] = 2
+                clusters[idx] = int(rank * (n_clusters - 1) / (n_samples - 1))
         df_copy["risk_cluster"] = clusters
+        
+        if not has_saw_score:
+            df_copy = df_copy.drop(columns=["saw_score"])
         return df_copy
         
     try:
@@ -606,10 +633,12 @@ def apply_kmeans_risk(df: pd.DataFrame, features: List[str], n_clusters: int = 3
         mapping = {old: new for new, old in enumerate(cluster_means.index)}
         df_copy["risk_cluster"] = df_copy["risk_cluster"].map(mapping)
     except Exception as e:
-        import logging
-        logging.warning(f"K-Means clustering failed ({str(e)}). Falling back to ranks.")
+        logger.warning(f"K-Means clustering failed ({str(e)}). Falling back to ranks.")
         sorted_ranks = df_copy["saw_score"].rank(ascending=True, method="first")
         percentiles = sorted_ranks / len(df_copy)
         df_copy["risk_cluster"] = np.where(percentiles <= 0.33, 0, np.where(percentiles <= 0.66, 1, 2))
+        
+    if not has_saw_score:
+        df_copy = df_copy.drop(columns=["saw_score"])
         
     return df_copy
