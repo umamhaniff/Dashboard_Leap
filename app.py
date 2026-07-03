@@ -215,7 +215,7 @@ if not st.session_state.logged_in:
                 st.session_state.logged_in = True
                 st.rerun()
             else:
-                st.error("Password salah. Silakan hubungi administrator. leapadmin2026")
+                st.error("Password salah. Silakan hubungi administrator. ~ leapadmin2026 ~")
     st.stop()
 
 # Initial data load if cache is empty
