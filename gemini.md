@@ -55,5 +55,7 @@ Sistem menggunakan **Genesis Design** dengan spesifikasi berikut:
 ---
 
 ## 🚦 Status Branch & Kolaborasi
-*   **Branch Aktif**: `feature/dss-hybrid`
+*   **Branch Aktif**: `feature/dss-hybrid` (digunakan untuk pengembangan aktif).
+*   **Branch Main**: `main` berisi rilis/checkpoint fungsional stabil dari `feature/dss-hybrid`.
+*   **Branch Arsip**: `archive/initial-idea` menyimpan historis ide awal dan brainstorming awal.
 *   **Aturan Commit**: Commit sesering mungkin untuk setiap unit task yang berhasil diselesaikan dan lolos uji unit test.
